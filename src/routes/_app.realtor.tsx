@@ -212,7 +212,7 @@ function RealtorPage() {
               <ReferralsAdmin
                 referrals={referrals}
                 onUpdate={async (id, patch) => {
-                  await supabase.from("referrals").update(patch).eq("id", id);
+                  await supabase.from("referrals").update(patch as any).eq("id", id);
                   const { data: refs } = await supabase
                     .from("referrals")
                     .select("id, category, fee_status, fee_amount, created_at, partner:partners(name)")
