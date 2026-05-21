@@ -18,6 +18,7 @@ import { Route as AppTriageRouteImport } from './routes/_app.triage'
 import { Route as AppSystemsRouteImport } from './routes/_app.systems'
 import { Route as AppRealtorRouteImport } from './routes/_app.realtor'
 import { Route as AppPartnersRouteImport } from './routes/_app.partners'
+import { Route as AppLogsRouteImport } from './routes/_app.logs'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppCalendarRouteImport } from './routes/_app.calendar'
 
@@ -65,6 +66,11 @@ const AppPartnersRoute = AppPartnersRouteImport.update({
   path: '/partners',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLogsRoute = AppLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppHomeRoute = AppHomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/calendar': typeof AppCalendarRoute
   '/home': typeof AppHomeRoute
+  '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
   '/realtor': typeof AppRealtorRoute
   '/systems': typeof AppSystemsRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/calendar': typeof AppCalendarRoute
   '/home': typeof AppHomeRoute
+  '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
   '/realtor': typeof AppRealtorRoute
   '/systems': typeof AppSystemsRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/home': typeof AppHomeRoute
+  '/_app/logs': typeof AppLogsRoute
   '/_app/partners': typeof AppPartnersRoute
   '/_app/realtor': typeof AppRealtorRoute
   '/_app/systems': typeof AppSystemsRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/calendar'
     | '/home'
+    | '/logs'
     | '/partners'
     | '/realtor'
     | '/systems'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/calendar'
     | '/home'
+    | '/logs'
     | '/partners'
     | '/realtor'
     | '/systems'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/_app/calendar'
     | '/_app/home'
+    | '/_app/logs'
     | '/_app/partners'
     | '/_app/realtor'
     | '/_app/systems'
@@ -227,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPartnersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/logs': {
+      id: '/_app/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof AppLogsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/home': {
       id: '/_app/home'
       path: '/home'
@@ -247,6 +266,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppCalendarRoute: typeof AppCalendarRoute
   AppHomeRoute: typeof AppHomeRoute
+  AppLogsRoute: typeof AppLogsRoute
   AppPartnersRoute: typeof AppPartnersRoute
   AppRealtorRoute: typeof AppRealtorRoute
   AppSystemsRoute: typeof AppSystemsRoute
@@ -256,6 +276,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppCalendarRoute: AppCalendarRoute,
   AppHomeRoute: AppHomeRoute,
+  AppLogsRoute: AppLogsRoute,
   AppPartnersRoute: AppPartnersRoute,
   AppRealtorRoute: AppRealtorRoute,
   AppSystemsRoute: AppSystemsRoute,
