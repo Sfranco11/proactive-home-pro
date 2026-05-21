@@ -1,0 +1,158 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { CalendarCheck, AlertTriangle, BookOpen, Users, ChevronRight, CheckCircle2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { AppHeader } from "@/components/AppHeader";
+import { Button } from "@/components/ui/button";
+import { SEASONS, SEASONAL_TASKS, currentSeason } from "@/lib/seasonal-tasks";
+
+export const Route = createFileRoute("/_app/home")({
+  component: HomeDashboard,
+});
+
+interface Realtor {
+  company_name: string;
+  brand_color: string;
+}
+
+function HomeDashboard() {
+  const { user, profile } = useAuth();
+  const [realtor, setRealtor] = useState<Realtor | null>(null);
+  const [logsCount, setLogsCount] = useState(0);
+  const [completedKeys, setCompletedKeys] = useState<Set<string>>(new Set());
+
+  const season = currentSeason();
+  const seasonMeta = SEASONS.find((s) => s.key === season)!;
+  const tasks = SEASONAL_TASKS[season];
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: home } = await supabase
+        .from("homes")
+        .select("realtor_id")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+      if (home?.realtor_id) {
+        const { data: r } = await supabase
+          .from("realtors")
+          .select("company_name, brand_color")
+          .eq("user_id", home.realtor_id)
+          .maybeSingle();
+        if (r) setRealtor(r as Realtor);
+      }
+      const since = new Date();
+      since.setMonth(since.getMonth() - 3);
+      const { data: logs, count } = await supabase
+        .from("maintenance_logs")
+        .select("task_key", { count: "exact" })
+        .eq("owner_id", user.id)
+        .gte("completed_at", since.toISOString());
+      setLogsCount(count ?? 0);
+      setCompletedKeys(new Set((logs ?? []).map((l: any) => l.task_key).filter(Boolean)));
+    })();
+  }, [user]);
+
+  return (
+    <>
+      <AppHeader title="HomeOwner Pro" subtitle={realtor ? `via ${realtor.company_name}` : undefined} />
+      <main className="container-app py-6">
+        {/* Greeting */}
+        <section className="mb-6">
+          <h1 className="font-display text-2xl font-semibold">Hi {profile?.full_name?.split(" ")[0] || "there"} 👋</h1>
+          <p className="text-sm text-muted-foreground">
+            It's <span className="font-medium text-foreground">{seasonMeta.label.toLowerCase()}</span> — here's what to focus on.
+          </p>
+        </section>
+
+        {/* Emergency CTA */}
+        <Link
+          to="/triage"
+          className="mb-6 flex items-center justify-between rounded-2xl border border-destructive/30 bg-destructive/5 p-4 transition-colors hover:bg-destructive/10"
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-destructive text-destructive-foreground">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-display font-semibold">Something broke?</div>
+              <div className="text-xs text-muted-foreground">Get DIY steps or call a pro now</div>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
+
+        {/* Season card */}
+        <section className="mb-6 rounded-2xl bg-card-gradient p-5 shadow-soft">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className={`inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs font-medium ${seasonMeta.tint}`}>
+                <CalendarCheck className="h-3.5 w-3.5" /> {seasonMeta.label} · {seasonMeta.months}
+              </div>
+              <h2 className="mt-2 font-display text-lg font-semibold">This season's checklist</h2>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/calendar">All <ChevronRight className="ml-0.5 h-4 w-4" /></Link>
+            </Button>
+          </div>
+          <ul className="space-y-2">
+            {tasks.slice(0, 3).map((t) => {
+              const done = completedKeys.has(t.key);
+              return (
+                <li key={t.key}>
+                  <Link
+                    to="/calendar"
+                    hash={t.key}
+                    className="flex items-center justify-between rounded-xl bg-background/60 p-3 hover:bg-background"
+                  >
+                    <div className="flex items-center gap-3">
+                      {done ? (
+                        <CheckCircle2 className="h-5 w-5 text-success" />
+                      ) : (
+                        <span className="h-5 w-5 rounded-full border-2 border-border" />
+                      )}
+                      <div>
+                        <div className={`text-sm font-medium ${done ? "text-muted-foreground line-through" : ""}`}>{t.title}</div>
+                        <div className="text-[11px] text-muted-foreground">{t.category} · {t.estCost}</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {/* Stats */}
+        <section className="mb-6 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Tasks logged (90d)</div>
+            <div className="mt-1 font-display text-2xl font-semibold">{logsCount}</div>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Season progress</div>
+            <div className="mt-1 font-display text-2xl font-semibold">
+              {tasks.filter((t) => completedKeys.has(t.key)).length}/{tasks.length}
+            </div>
+          </div>
+        </section>
+
+        {/* Quick links */}
+        <section className="grid grid-cols-2 gap-3">
+          {[
+            { to: "/systems", i: BookOpen, t: "Systems guide", d: "Shutoffs & lifespans" },
+            { to: "/partners", i: Users, t: "Your pros", d: "Vetted partners" },
+          ].map((q) => (
+            <Link key={q.to} to={q.to} className="rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-accent">
+              <q.i className="h-5 w-5 text-primary" />
+              <div className="mt-3 font-medium">{q.t}</div>
+              <div className="text-xs text-muted-foreground">{q.d}</div>
+            </Link>
+          ))}
+        </section>
+      </main>
+    </>
+  );
+}
