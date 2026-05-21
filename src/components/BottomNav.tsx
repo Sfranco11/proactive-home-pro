@@ -1,12 +1,12 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, CalendarCheck, BookOpen, AlertTriangle, Users, LayoutDashboard } from "lucide-react";
+import { Home, CalendarCheck, AlertTriangle, ClipboardList, Users, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 const homeownerItems = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/calendar", label: "Seasons", icon: CalendarCheck },
   { to: "/triage", label: "Broken", icon: AlertTriangle },
-  { to: "/systems", label: "Systems", icon: BookOpen },
+  { to: "/logs", label: "Logs", icon: ClipboardList },
   { to: "/partners", label: "Pros", icon: Users },
 ];
 
