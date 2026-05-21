@@ -9,38 +9,182 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RCodeRouteImport } from './routes/r.$code'
+import { Route as AppTriageRouteImport } from './routes/_app.triage'
+import { Route as AppSystemsRouteImport } from './routes/_app.systems'
+import { Route as AppRealtorRouteImport } from './routes/_app.realtor'
+import { Route as AppPartnersRouteImport } from './routes/_app.partners'
+import { Route as AppHomeRouteImport } from './routes/_app.home'
+import { Route as AppCalendarRouteImport } from './routes/_app.calendar'
 
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RCodeRoute = RCodeRouteImport.update({
+  id: '/r/$code',
+  path: '/r/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppTriageRoute = AppTriageRouteImport.update({
+  id: '/triage',
+  path: '/triage',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSystemsRoute = AppSystemsRouteImport.update({
+  id: '/systems',
+  path: '/systems',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRealtorRoute = AppRealtorRouteImport.update({
+  id: '/realtor',
+  path: '/realtor',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPartnersRoute = AppPartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHomeRoute = AppHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
+  '/calendar': typeof AppCalendarRoute
+  '/home': typeof AppHomeRoute
+  '/partners': typeof AppPartnersRoute
+  '/realtor': typeof AppRealtorRoute
+  '/systems': typeof AppSystemsRoute
+  '/triage': typeof AppTriageRoute
+  '/r/$code': typeof RCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
+  '/calendar': typeof AppCalendarRoute
+  '/home': typeof AppHomeRoute
+  '/partners': typeof AppPartnersRoute
+  '/realtor': typeof AppRealtorRoute
+  '/systems': typeof AppSystemsRoute
+  '/triage': typeof AppTriageRoute
+  '/r/$code': typeof RCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
+  '/_app/calendar': typeof AppCalendarRoute
+  '/_app/home': typeof AppHomeRoute
+  '/_app/partners': typeof AppPartnersRoute
+  '/_app/realtor': typeof AppRealtorRoute
+  '/_app/systems': typeof AppSystemsRoute
+  '/_app/triage': typeof AppTriageRoute
+  '/r/$code': typeof RCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/calendar'
+    | '/home'
+    | '/partners'
+    | '/realtor'
+    | '/systems'
+    | '/triage'
+    | '/r/$code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/calendar'
+    | '/home'
+    | '/partners'
+    | '/realtor'
+    | '/systems'
+    | '/triage'
+    | '/r/$code'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/auth'
+    | '/onboarding'
+    | '/_app/calendar'
+    | '/_app/home'
+    | '/_app/partners'
+    | '/_app/realtor'
+    | '/_app/systems'
+    | '/_app/triage'
+    | '/r/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  OnboardingRoute: typeof OnboardingRoute
+  RCodeRoute: typeof RCodeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +192,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/r/$code': {
+      id: '/r/$code'
+      path: '/r/$code'
+      fullPath: '/r/$code'
+      preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/triage': {
+      id: '/_app/triage'
+      path: '/triage'
+      fullPath: '/triage'
+      preLoaderRoute: typeof AppTriageRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/systems': {
+      id: '/_app/systems'
+      path: '/systems'
+      fullPath: '/systems'
+      preLoaderRoute: typeof AppSystemsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/realtor': {
+      id: '/_app/realtor'
+      path: '/realtor'
+      fullPath: '/realtor'
+      preLoaderRoute: typeof AppRealtorRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/partners': {
+      id: '/_app/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof AppPartnersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/home': {
+      id: '/_app/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AppHomeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/calendar': {
+      id: '/_app/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppCalendarRoute: typeof AppCalendarRoute
+  AppHomeRoute: typeof AppHomeRoute
+  AppPartnersRoute: typeof AppPartnersRoute
+  AppRealtorRoute: typeof AppRealtorRoute
+  AppSystemsRoute: typeof AppSystemsRoute
+  AppTriageRoute: typeof AppTriageRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppCalendarRoute: AppCalendarRoute,
+  AppHomeRoute: AppHomeRoute,
+  AppPartnersRoute: AppPartnersRoute,
+  AppRealtorRoute: AppRealtorRoute,
+  AppSystemsRoute: AppSystemsRoute,
+  AppTriageRoute: AppTriageRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
+  OnboardingRoute: OnboardingRoute,
+  RCodeRoute: RCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
