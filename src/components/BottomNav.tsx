@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, CalendarCheck, BookOpen, AlertTriangle, Users } from "lucide-react";
+import { Home, CalendarCheck, BookOpen, AlertTriangle, Users, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 const homeownerItems = [
@@ -11,10 +11,7 @@ const homeownerItems = [
 ];
 
 const realtorItems = [
-  { to: "/realtor", label: "Dashboard", icon: Home },
-  { to: "/realtor/partners", label: "Partners", icon: Users },
-  { to: "/realtor/clients", label: "Clients", icon: BookOpen },
-  { to: "/realtor/referrals", label: "Referrals", icon: CalendarCheck },
+  { to: "/realtor", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 export function BottomNav() {
@@ -24,7 +21,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="container-app flex justify-between py-2">
+      <div className="container-app flex justify-between gap-1 py-2">
         {items.map((it) => {
           const active = loc.pathname === it.to || loc.pathname.startsWith(it.to + "/");
           const Icon = it.icon;
