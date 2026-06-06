@@ -291,6 +291,9 @@ function BookingDetail() {
           </Button>
         </section>
 
+        {/* Invoices / receipts */}
+        <Invoices bookingId={id} />
+
         {!isTerminal && (
           <Button variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={doCancel}>
             Cancel booking
