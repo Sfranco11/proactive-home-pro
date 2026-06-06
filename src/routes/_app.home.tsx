@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CalendarCheck, AlertTriangle, BookOpen, Users, ChevronRight, CheckCircle2 } from "lucide-react";
+import { CalendarCheck, AlertTriangle, BookOpen, Users, ChevronRight, CheckCircle2, Sparkles, Repeat } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AppHeader } from "@/components/AppHeader";
@@ -56,14 +56,30 @@ function HomeDashboard() {
 
   return (
     <>
-      <AppHeader title="HomeOwner Pro" subtitle={realtor ? `via ${realtor.company_name}` : undefined} />
-      <main className="container-app py-6">
+      <AppHeader title="HomeOwner Pro" subtitle={realtor ? `via ${realtor.company_name}` : "The operating system for your home"} />
+      <main className="container-app py-6 pb-24">
         {/* Greeting */}
         <section className="mb-6">
           <h1 className="font-display text-2xl font-semibold">Hi {profile?.full_name?.split(" ")[0] || "there"} 👋</h1>
           <p className="text-sm text-muted-foreground">
-            It's <span className="font-medium text-foreground">{seasonMeta.label.toLowerCase()}</span> — here's what to focus on.
+            It's <span className="font-medium text-foreground">{seasonMeta.label.toLowerCase()}</span> — your home is on track.
           </p>
+        </section>
+
+        {/* Primary actions */}
+        <section className="mb-6 grid grid-cols-2 gap-3">
+          <Link to="/pros" className="rounded-2xl bg-hero p-1 shadow-glow">
+            <div className="rounded-[14px] bg-card p-4">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <div className="mt-3 font-display font-semibold">Book a pro</div>
+              <div className="text-xs text-muted-foreground">Vetted, ranked, ready</div>
+            </div>
+          </Link>
+          <Link to="/autopilot" className="rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-accent">
+            <Repeat className="h-5 w-5 text-primary" />
+            <div className="mt-3 font-display font-semibold">AutoPilot</div>
+            <div className="text-xs text-muted-foreground">Set recurring care</div>
+          </Link>
         </section>
 
         {/* Emergency CTA */}

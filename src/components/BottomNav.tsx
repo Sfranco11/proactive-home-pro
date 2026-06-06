@@ -1,14 +1,13 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, CalendarCheck, AlertTriangle, ClipboardList, Sparkles, LayoutDashboard, BookCheck, DollarSign } from "lucide-react";
+import { Home, AlertTriangle, Sparkles, LayoutDashboard, BookCheck, DollarSign, Repeat } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 const homeownerItems = [
   { to: "/home", label: "Home", icon: Home },
-  { to: "/calendar", label: "Seasons", icon: CalendarCheck },
   { to: "/pros", label: "Pros", icon: Sparkles },
+  { to: "/autopilot", label: "AutoPilot", icon: Repeat },
   { to: "/bookings", label: "Bookings", icon: BookCheck },
-  { to: "/triage", label: "Broken", icon: AlertTriangle },
-  { to: "/logs", label: "Logs", icon: ClipboardList },
+  { to: "/triage", label: "Help", icon: AlertTriangle },
 ];
 
 const realtorItems = [

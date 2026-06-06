@@ -1,95 +1,63 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AlertTriangle, Phone, ArrowLeft, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Sparkles, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { TRIAGE_ISSUES, PARTNER_CATEGORIES } from "@/lib/home-systems";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/triage")({
   component: TriagePage,
 });
 
-interface Partner {
-  id: string;
-  name: string;
-  category: string;
-  phone: string | null;
-  response_time: string | null;
-}
+// Only true emergencies surface safety guidance.
+const SAFETY_CATEGORIES = new Set(["plumbers", "electricians", "hvac", "gas"]);
+const SAFETY_TIPS: Record<string, string> = {
+  plumbers: "Active leak? Shut off the main water supply. Move valuables off the floor.",
+  electricians: "Smell burning or seeing sparks? Switch off the breaker. Don't touch wet electronics.",
+  hvac: "Smell gas? Leave the home now and call your utility's emergency line.",
+  gas: "Smell gas? Leave the home now and call your utility's emergency line.",
+};
 
 function TriagePage() {
   const { user } = useAuth();
-  const [step, setStep] = useState<"pick" | "detail" | "result">("pick");
+  const navigate = useNavigate();
+  const [step, setStep] = useState<"pick" | "detail">("pick");
   const [issueKey, setIssueKey] = useState<string | null>(null);
   const [description, setDescription] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
   const [homeId, setHomeId] = useState<string | null>(null);
-  const [realtorId, setRealtorId] = useState<string | null>(null);
-  const [partners, setPartners] = useState<Partner[]>([]);
   const [busy, setBusy] = useState(false);
-  const [match, setMatch] = useState<Partner | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const { data: h } = await supabase.from("homes").select("id, realtor_id").eq("owner_id", user.id).maybeSingle();
-      if (!h) return;
-      setHomeId(h.id);
-      setRealtorId(h.realtor_id);
-      if (h.realtor_id) {
-        const { data: ps } = await supabase
-          .from("partners")
-          .select("id, name, category, phone, response_time")
-          .eq("realtor_id", h.realtor_id);
-        setPartners(ps ?? []);
-      }
-    })();
+    supabase.from("homes").select("id").eq("owner_id", user.id).maybeSingle()
+      .then(({ data }) => setHomeId(data?.id ?? null));
   }, [user]);
 
   const issue = TRIAGE_ISSUES.find((i) => i.key === issueKey);
 
-  const dispatch = async () => {
+  const bookAPro = async () => {
     if (!user || !homeId || !issue) return;
     setBusy(true);
-    const { data: triage } = await supabase
-      .from("triage_requests")
-      .insert({
-        owner_id: user.id,
-        home_id: homeId,
-        category: issue.category,
-        description,
-        severity: issue.severity,
-      })
-      .select("id")
-      .single();
-
-    const partner = partners.find((p) => p.category === issue.category) ?? null;
-    if (partner && realtorId && triage) {
-      await supabase
-        .from("triage_requests")
-        .update({ partner_id: partner.id })
-        .eq("id", triage.id);
-      await supabase.from("referrals").insert({
-        homeowner_id: user.id,
-        realtor_id: realtorId,
-        partner_id: partner.id,
-        category: issue.category,
-        triage_id: triage.id,
-      });
+    let photoUrl: string | null = null;
+    if (photo) {
+      const path = `${user.id}/triage/${Date.now()}-${photo.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const { error } = await supabase.storage.from("booking-photos").upload(path, photo);
+      if (!error) photoUrl = supabase.storage.from("booking-photos").getPublicUrl(path).data.publicUrl;
     }
-    setMatch(partner);
-    setStep("result");
+    await supabase.from("triage_requests").insert({
+      owner_id: user.id,
+      home_id: homeId,
+      category: issue.category,
+      description,
+      severity: issue.severity,
+      photo_url: photoUrl,
+    });
     setBusy(false);
-  };
-
-  const reset = () => {
-    setStep("pick");
-    setIssueKey(null);
-    setDescription("");
-    setMatch(null);
+    navigate({ to: "/pros", search: { category: issue.category } as any });
   };
 
   const sevTint =
@@ -99,18 +67,17 @@ function TriagePage() {
       ? "bg-warning/15 text-warning"
       : "bg-muted text-muted-foreground";
 
+  const showSafety = issue && issue.severity === "urgent" && SAFETY_CATEGORIES.has(issue.category);
+
   return (
     <>
-      <AppHeader title="Something broke" subtitle="We'll triage and route you" />
+      <AppHeader title="What's going on?" subtitle="We'll match you with the right pro" />
       <main className="container-app py-6">
         {step === "pick" && (
           <>
-            <div className="mb-5 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
-              <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
-              <div className="text-sm">
-                <div className="font-semibold">Pick the issue closest to what's happening</div>
-                <div className="text-muted-foreground">We'll show DIY steps or route to a pro.</div>
-              </div>
+            <div className="mb-5 rounded-2xl border border-border bg-card p-4 text-sm">
+              <div className="font-semibold">Pick the issue closest to what's happening</div>
+              <div className="text-muted-foreground">We'll route you to a vetted professional.</div>
             </div>
             <div className="space-y-2">
               {TRIAGE_ISSUES.map((i) => {
@@ -118,10 +85,7 @@ function TriagePage() {
                 return (
                   <button
                     key={i.key}
-                    onClick={() => {
-                      setIssueKey(i.key);
-                      setStep("detail");
-                    }}
+                    onClick={() => { setIssueKey(i.key); setStep("detail"); }}
                     className="flex w-full items-center justify-between rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:bg-accent"
                   >
                     <div>
@@ -159,79 +123,51 @@ function TriagePage() {
                 {issue.severity.replace("_", " ")}
               </div>
               <h2 className="mt-2 font-display text-lg font-semibold">{issue.label}</h2>
-              <div className="mt-4">
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Quick first steps
+
+              {showSafety && (
+                <div className="mt-4 flex gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div>
+                    <div className="font-semibold">Safety first</div>
+                    <p>{SAFETY_TIPS[issue.category] ?? "If anyone is in danger, call 911."}</p>
+                  </div>
                 </div>
-                <ul className="space-y-1.5 text-sm">
-                  {issue.severity === "urgent" && (
-                    <li className="flex gap-2">
-                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                      <span>If active leak or gas smell: shut off the main supply now. See Systems reference.</span>
-                    </li>
-                  )}
-                  <li className="flex gap-2">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>Take a photo of the issue area for the pro.</span>
-                  </li>
-                  <li className="flex gap-2">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>Note when it started and any unusual sounds, smells, or stains.</span>
-                  </li>
-                </ul>
-              </div>
+              )}
+
               <div className="mt-5 space-y-2">
-                <label className="text-sm font-medium">Add details (optional)</label>
+                <label className="text-sm font-medium">Tell us what's happening (optional)</label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value.slice(0, 1000))}
-                  placeholder="e.g. Water dripping from ceiling near master bath, started yesterday."
-                  rows={4}
+                  placeholder="e.g. Water dripping from ceiling near master bath since last night."
+                  rows={3}
                 />
               </div>
-              <Button onClick={dispatch} disabled={busy} className="mt-5 w-full" size="lg">
-                {busy ? "Submitting…" : "Find me a pro"}
+
+              <div className="mt-3 space-y-2">
+                <label className="text-sm font-medium">Add a photo <span className="text-muted-foreground">(optional, helps the pro)</span></label>
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background p-4 text-sm text-muted-foreground hover:bg-accent">
+                  <Camera className="h-4 w-4" />
+                  {photo ? photo.name : "Tap to attach a photo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    hidden
+                    onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+              </div>
+
+              <Button onClick={bookAPro} disabled={busy} className="mt-5 w-full" size="lg">
+                <Sparkles className="mr-2 h-4 w-4" />
+                {busy ? "Routing…" : "Book a professional"}
               </Button>
+              <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                You'll see vetted, top-rated pros for this issue next.
+              </p>
             </div>
           </>
-        )}
-
-        {step === "result" && issue && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-border bg-card-gradient p-5 shadow-soft">
-              <div className="text-xs text-muted-foreground">Your issue</div>
-              <div className="font-display text-lg font-semibold">{issue.label}</div>
-            </div>
-            {match ? (
-              <div className="rounded-2xl bg-hero p-1 shadow-glow">
-                <div className="rounded-[18px] bg-card p-5">
-                  <div className="text-xs uppercase tracking-widest text-primary">Recommended pro</div>
-                  <div className="mt-1 font-display text-xl font-semibold">{match.name}</div>
-                  {match.response_time && (
-                    <div className="text-sm text-muted-foreground">Typical response: {match.response_time}</div>
-                  )}
-                  {match.phone ? (
-                    <Button asChild className="mt-4 w-full" size="lg">
-                      <a href={`tel:${match.phone}`}>
-                        <Phone className="mr-2 h-4 w-4" /> Call {match.phone}
-                      </a>
-                    </Button>
-                  ) : (
-                    <Button disabled className="mt-4 w-full">No phone on file</Button>
-                  )}
-                  <p className="mt-3 text-[11px] text-muted-foreground">
-                    Your realtor has been notified of this referral.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
-                Your realtor hasn't added a {issue.category} partner yet. Try calling a trusted local
-                pro and log the work in your maintenance history.
-              </div>
-            )}
-            <Button variant="outline" onClick={reset} className="w-full">Triage another issue</Button>
-          </div>
         )}
       </main>
     </>

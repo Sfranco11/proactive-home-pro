@@ -291,6 +291,9 @@ function BookingDetail() {
           </Button>
         </section>
 
+        {/* Invoices / receipts */}
+        <Invoices bookingId={id} />
+
         {!isTerminal && (
           <Button variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={doCancel}>
             Cancel booking
@@ -298,5 +301,46 @@ function BookingDetail() {
         )}
       </main>
     </>
+  );
+}
+
+interface InvoiceRow { id: string; amount: number; tax: number; status: string; file_url: string | null; issued_at: string; }
+
+function Invoices({ bookingId }: { bookingId: string }) {
+  const [rows, setRows] = useState<InvoiceRow[]>([]);
+  useEffect(() => {
+    (supabase as any)
+      .from("invoices")
+      .select("id, amount, tax, status, file_url, issued_at")
+      .eq("booking_id", bookingId)
+      .order("issued_at", { ascending: false })
+      .then(({ data }: any) => setRows(data ?? []));
+  }, [bookingId]);
+  if (rows.length === 0) {
+    return (
+      <section className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+        No invoices yet. Your pro will send one when the job is complete.
+      </section>
+    );
+  }
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Invoices & receipts</h3>
+      <ul className="space-y-2">
+        {rows.map((r) => (
+          <li key={r.id} className="flex items-center justify-between rounded-xl bg-muted/30 p-3 text-sm">
+            <div>
+              <div className="font-medium">${Number(r.amount).toFixed(2)}{r.tax ? ` + $${Number(r.tax).toFixed(2)} tax` : ""}</div>
+              <div className="text-[11px] text-muted-foreground">{new Date(r.issued_at).toLocaleDateString()} · {r.status}</div>
+            </div>
+            {r.file_url && (
+              <a href={r.file_url} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline">
+                View
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
