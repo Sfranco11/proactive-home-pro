@@ -71,3 +71,42 @@ export const cancelBooking = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const setBookingPrice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      price: z.number().nonnegative().nullable(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as any;
+    const { error } = await sb
+      .from("bookings")
+      .update({ final_cost: data.price })
+      .eq("id", data.id)
+      .eq("realtor_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setProviderCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      category: z.string().min(1).max(64),
+      rate: z.number().min(0).max(100),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as any;
+    const { error } = await sb
+      .from("realtor_commission_rates")
+      .upsert(
+        { realtor_id: context.userId, category: data.category, rate_percent: data.rate },
+        { onConflict: "realtor_id,category" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
