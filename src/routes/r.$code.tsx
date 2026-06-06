@@ -26,13 +26,11 @@ function InviteLanding() {
 
   useEffect(() => {
     supabase
-      .from("realtors")
-      .select("company_name, brand_color, logo_url")
-      .eq("referral_code", code.toUpperCase())
-      .maybeSingle()
+      .rpc("get_realtor_brand", { _code: code.toUpperCase() })
       .then(({ data }) => {
-        if (!data) setNotFound(true);
-        else setBrand(data as Brand);
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!row) setNotFound(true);
+        else setBrand(row as Brand);
       });
   }, [code]);
 
