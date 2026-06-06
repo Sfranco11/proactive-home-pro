@@ -25,6 +25,7 @@ import { Route as AppLogsRouteImport } from './routes/_app.logs'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppCalendarRouteImport } from './routes/_app.calendar'
 import { Route as AppBookingsRouteImport } from './routes/_app.bookings'
+import { Route as AppRealtorRevenueRouteImport } from './routes/_app.realtor.revenue'
 import { Route as AppProsIdRouteImport } from './routes/_app.pros.$id'
 import { Route as AppBookingsIdRouteImport } from './routes/_app.bookings.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -109,6 +110,11 @@ const AppBookingsRoute = AppBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRealtorRevenueRoute = AppRealtorRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
+  getParentRoute: () => AppRealtorRoute,
+} as any)
 const AppProsIdRoute = AppProsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -141,7 +147,7 @@ export interface FileRoutesByFullPath {
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
   '/pros': typeof AppProsRouteWithChildren
-  '/realtor': typeof AppRealtorRoute
+  '/realtor': typeof AppRealtorRouteWithChildren
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/r/$code': typeof RCodeRoute
   '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
+  '/realtor/revenue': typeof AppRealtorRevenueRoute
   '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -162,7 +169,7 @@ export interface FileRoutesByTo {
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
   '/pros': typeof AppProsRouteWithChildren
-  '/realtor': typeof AppRealtorRoute
+  '/realtor': typeof AppRealtorRouteWithChildren
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/r/$code': typeof RCodeRoute
   '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
+  '/realtor/revenue': typeof AppRealtorRevenueRoute
   '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -185,7 +193,7 @@ export interface FileRoutesById {
   '/_app/logs': typeof AppLogsRoute
   '/_app/partners': typeof AppPartnersRoute
   '/_app/pros': typeof AppProsRouteWithChildren
-  '/_app/realtor': typeof AppRealtorRoute
+  '/_app/realtor': typeof AppRealtorRouteWithChildren
   '/_app/systems': typeof AppSystemsRoute
   '/_app/triage': typeof AppTriageRoute
   '/_app/upgrade': typeof AppUpgradeRoute
@@ -193,6 +201,7 @@ export interface FileRoutesById {
   '/r/$code': typeof RCodeRoute
   '/_app/bookings/$id': typeof AppBookingsIdRoute
   '/_app/pros/$id': typeof AppProsIdRoute
+  '/_app/realtor/revenue': typeof AppRealtorRevenueRoute
   '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/bookings/$id'
     | '/pros/$id'
+    | '/realtor/revenue'
     | '/api/public/bookings/$token'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/bookings/$id'
     | '/pros/$id'
+    | '/realtor/revenue'
     | '/api/public/bookings/$token'
     | '/api/public/payments/webhook'
   id:
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/_app/bookings/$id'
     | '/_app/pros/$id'
+    | '/_app/realtor/revenue'
     | '/api/public/bookings/$token'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
@@ -388,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBookingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/realtor/revenue': {
+      id: '/_app/realtor/revenue'
+      path: '/revenue'
+      fullPath: '/realtor/revenue'
+      preLoaderRoute: typeof AppRealtorRevenueRouteImport
+      parentRoute: typeof AppRealtorRoute
+    }
     '/_app/pros/$id': {
       id: '/_app/pros/$id'
       path: '/$id'
@@ -442,6 +461,18 @@ const AppProsRouteChildren: AppProsRouteChildren = {
 const AppProsRouteWithChildren =
   AppProsRoute._addFileChildren(AppProsRouteChildren)
 
+interface AppRealtorRouteChildren {
+  AppRealtorRevenueRoute: typeof AppRealtorRevenueRoute
+}
+
+const AppRealtorRouteChildren: AppRealtorRouteChildren = {
+  AppRealtorRevenueRoute: AppRealtorRevenueRoute,
+}
+
+const AppRealtorRouteWithChildren = AppRealtorRoute._addFileChildren(
+  AppRealtorRouteChildren,
+)
+
 interface AppRouteChildren {
   AppBookingsRoute: typeof AppBookingsRouteWithChildren
   AppCalendarRoute: typeof AppCalendarRoute
@@ -449,7 +480,7 @@ interface AppRouteChildren {
   AppLogsRoute: typeof AppLogsRoute
   AppPartnersRoute: typeof AppPartnersRoute
   AppProsRoute: typeof AppProsRouteWithChildren
-  AppRealtorRoute: typeof AppRealtorRoute
+  AppRealtorRoute: typeof AppRealtorRouteWithChildren
   AppSystemsRoute: typeof AppSystemsRoute
   AppTriageRoute: typeof AppTriageRoute
   AppUpgradeRoute: typeof AppUpgradeRoute
@@ -462,7 +493,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLogsRoute: AppLogsRoute,
   AppPartnersRoute: AppPartnersRoute,
   AppProsRoute: AppProsRouteWithChildren,
-  AppRealtorRoute: AppRealtorRoute,
+  AppRealtorRoute: AppRealtorRouteWithChildren,
   AppSystemsRoute: AppSystemsRoute,
   AppTriageRoute: AppTriageRoute,
   AppUpgradeRoute: AppUpgradeRoute,

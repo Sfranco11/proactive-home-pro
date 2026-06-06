@@ -2,10 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Star, MapPin, Phone, Mail, Globe, CalendarPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { PRO_CATEGORY_MAP } from "@/lib/pro-categories";
 import { toast } from "sonner";
+import { createBooking } from "@/lib/bookings.functions";
 
 export const Route = createFileRoute("/_app/pros/$id")({
   component: ProDetailPage,
