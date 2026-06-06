@@ -14,6 +14,199 @@ export type Database = {
   }
   public: {
     Tables: {
+      autopilot_schedules: {
+        Row: {
+          active: boolean
+          cadence: string
+          category: string
+          created_at: string
+          home_id: string
+          id: string
+          last_run_at: string | null
+          next_run_at: string
+          notes: string | null
+          owner_id: string
+          preferred_partner_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          cadence?: string
+          category: string
+          created_at?: string
+          home_id: string
+          id?: string
+          last_run_at?: string | null
+          next_run_at?: string
+          notes?: string | null
+          owner_id: string
+          preferred_partner_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          cadence?: string
+          category?: string
+          created_at?: string
+          home_id?: string
+          id?: string
+          last_run_at?: string | null
+          next_run_at?: string
+          notes?: string | null
+          owner_id?: string
+          preferred_partner_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      booking_events: {
+        Row: {
+          actor_id: string | null
+          booking_id: string
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json | null
+        }
+        Insert: {
+          actor_id?: string | null
+          booking_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json | null
+        }
+        Update: {
+          actor_id?: string | null
+          booking_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_messages: {
+        Row: {
+          body: string
+          booking_id: string
+          created_at: string
+          id: string
+          sender_id: string
+          sender_role: string
+        }
+        Insert: {
+          body: string
+          booking_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          sender_role?: string
+        }
+        Update: {
+          body?: string
+          booking_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          sender_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          autopilot_schedule_id: string | null
+          category: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          estimated_cost: number | null
+          final_cost: number | null
+          home_id: string
+          id: string
+          is_recurring: boolean
+          notes: string | null
+          owner_id: string
+          partner_id: string | null
+          photo_urls: string[]
+          provider_id: string | null
+          public_token: string | null
+          realtor_id: string | null
+          scheduled_at: string | null
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          autopilot_schedule_id?: string | null
+          category: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number | null
+          final_cost?: number | null
+          home_id: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          owner_id: string
+          partner_id?: string | null
+          photo_urls?: string[]
+          provider_id?: string | null
+          public_token?: string | null
+          realtor_id?: string | null
+          scheduled_at?: string | null
+          severity?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          autopilot_schedule_id?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number | null
+          final_cost?: number | null
+          home_id?: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          owner_id?: string
+          partner_id?: string | null
+          photo_urls?: string[]
+          provider_id?: string | null
+          public_token?: string | null
+          realtor_id?: string | null
+          scheduled_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       homes: {
         Row: {
           address: string | null
@@ -61,6 +254,56 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "realtors"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          currency: string
+          id: string
+          owner_id: string
+          paid_at: string | null
+          pdf_url: string | null
+          realtor_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          owner_id: string
+          paid_at?: string | null
+          pdf_url?: string | null
+          realtor_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          owner_id?: string
+          paid_at?: string | null
+          pdf_url?: string | null
+          realtor_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -207,6 +450,36 @@ export type Database = {
         }
         Relationships: []
       }
+      realtor_commission_rates: {
+        Row: {
+          category: string
+          created_at: string
+          flat_fee: number | null
+          id: string
+          rate_percent: number
+          realtor_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          flat_fee?: number | null
+          id?: string
+          rate_percent?: number
+          realtor_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          flat_fee?: number | null
+          id?: string
+          rate_percent?: number
+          realtor_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       realtors: {
         Row: {
           brand_color: string
@@ -307,15 +580,19 @@ export type Database = {
           email: string | null
           google_place_id: string | null
           id: string
+          insured: boolean
           is_premium_only: boolean
+          licensed: boolean
           name: string
           phone: string | null
           photo_urls: string[]
           rating: number | null
+          response_time_minutes: number | null
           review_count: number
           service_area: string | null
           sort_rank: number
           updated_at: string
+          verified: boolean
           website: string | null
         }
         Insert: {
@@ -326,15 +603,19 @@ export type Database = {
           email?: string | null
           google_place_id?: string | null
           id?: string
+          insured?: boolean
           is_premium_only?: boolean
+          licensed?: boolean
           name: string
           phone?: string | null
           photo_urls?: string[]
           rating?: number | null
+          response_time_minutes?: number | null
           review_count?: number
           service_area?: string | null
           sort_rank?: number
           updated_at?: string
+          verified?: boolean
           website?: string | null
         }
         Update: {
@@ -345,15 +626,19 @@ export type Database = {
           email?: string | null
           google_place_id?: string | null
           id?: string
+          insured?: boolean
           is_premium_only?: boolean
+          licensed?: boolean
           name?: string
           phone?: string | null
           photo_urls?: string[]
           rating?: number | null
+          response_time_minutes?: number | null
           review_count?: number
           service_area?: string | null
           sort_rank?: number
           updated_at?: string
+          verified?: boolean
           website?: string | null
         }
         Relationships: []
