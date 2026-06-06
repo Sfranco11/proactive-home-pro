@@ -46,7 +46,7 @@ function ProsDirectoryPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("service_providers")
         .select("id, name, category, rating, review_count, service_area, description, is_premium_only, sort_rank, licensed, insured, verified, response_time_minutes, years_in_business")
         .eq("active", true);

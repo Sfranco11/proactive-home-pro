@@ -39,10 +39,10 @@ function ProDetailPage() {
   const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
-    supabase.from("service_providers")
+    (supabase as any).from("service_providers")
       .select("id, name, category, rating, review_count, phone, email, website, service_area, description, photo_urls, is_premium_only, licensed, insured, verified, response_time_minutes, years_in_business")
       .eq("id", id).maybeSingle()
-      .then(({ data }) => { setProvider((data as Provider) ?? null); setLoaded(true); });
+      .then(({ data }: any) => { setProvider((data as Provider) ?? null); setLoaded(true); });
   }, [id]);
 
   if (loaded && !provider) {
