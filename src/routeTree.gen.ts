@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RCodeRouteImport } from './routes/r.$code'
+import { Route as BookTokenRouteImport } from './routes/book.$token'
 import { Route as AppUpgradeRouteImport } from './routes/_app.upgrade'
 import { Route as AppTriageRouteImport } from './routes/_app.triage'
 import { Route as AppSystemsRouteImport } from './routes/_app.systems'
@@ -51,6 +52,11 @@ const IndexRoute = IndexRouteImport.update({
 const RCodeRoute = RCodeRouteImport.update({
   id: '/r/$code',
   path: '/r/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookTokenRoute = BookTokenRouteImport.update({
+  id: '/book/$token',
+  path: '/book/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppUpgradeRoute = AppUpgradeRouteImport.update({
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
+  '/book/$token': typeof BookTokenRoute
   '/r/$code': typeof RCodeRoute
   '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
+  '/book/$token': typeof BookTokenRoute
   '/r/$code': typeof RCodeRoute
   '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/_app/systems': typeof AppSystemsRoute
   '/_app/triage': typeof AppTriageRoute
   '/_app/upgrade': typeof AppUpgradeRoute
+  '/book/$token': typeof BookTokenRoute
   '/r/$code': typeof RCodeRoute
   '/_app/bookings/$id': typeof AppBookingsIdRoute
   '/_app/pros/$id': typeof AppProsIdRoute
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/systems'
     | '/triage'
     | '/upgrade'
+    | '/book/$token'
     | '/r/$code'
     | '/bookings/$id'
     | '/pros/$id'
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/systems'
     | '/triage'
     | '/upgrade'
+    | '/book/$token'
     | '/r/$code'
     | '/bookings/$id'
     | '/pros/$id'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/_app/systems'
     | '/_app/triage'
     | '/_app/upgrade'
+    | '/book/$token'
     | '/r/$code'
     | '/_app/bookings/$id'
     | '/_app/pros/$id'
@@ -256,6 +268,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
+  BookTokenRoute: typeof BookTokenRoute
   RCodeRoute: typeof RCodeRoute
   ApiPublicBookingsTokenRoute: typeof ApiPublicBookingsTokenRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       path: '/r/$code'
       fullPath: '/r/$code'
       preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book/$token': {
+      id: '/book/$token'
+      path: '/book/$token'
+      fullPath: '/book/$token'
+      preLoaderRoute: typeof BookTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/upgrade': {
@@ -455,6 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
+  BookTokenRoute: BookTokenRoute,
   RCodeRoute: RCodeRoute,
   ApiPublicBookingsTokenRoute: ApiPublicBookingsTokenRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
