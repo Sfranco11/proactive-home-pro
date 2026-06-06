@@ -48,26 +48,21 @@ function BookingsList() {
 
   useEffect(() => {
     if (!user) return;
-    (supabase as any)
-      .from("bookings")
-      .select("id, category, status, scheduled_at, created_at, provider:service_providers(name)")
-      .eq("homeowner_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }: any) => setRows(data ?? []));
+    const fetchRows = () =>
+      (supabase as any)
+        .from("bookings")
+        .select("id, category, status, scheduled_at, created_at, provider:service_providers(name)")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false })
+        .then(({ data }: any) => setRows(data ?? []));
+    fetchRows();
 
     const channel = supabase
       .channel(`bookings-${user.id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "bookings", filter: `homeowner_id=eq.${user.id}` },
-        () => {
-          (supabase as any)
-            .from("bookings")
-            .select("id, category, status, scheduled_at, created_at, provider:service_providers(name)")
-            .eq("homeowner_id", user.id)
-            .order("created_at", { ascending: false })
-            .then(({ data }: any) => setRows(data ?? []));
-        },
+        { event: "*", schema: "public", table: "bookings", filter: `owner_id=eq.${user.id}` },
+        () => fetchRows(),
       )
       .subscribe();
     return () => {

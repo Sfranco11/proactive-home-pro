@@ -5,9 +5,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const createSchema = z.object({
   provider_id: z.string().uuid(),
   category: z.string().min(1).max(64),
-  service_type: z.enum(["one_time", "recurring", "seasonal"]).default("one_time"),
+  title: z.string().min(1).max(120).optional(),
+  is_recurring: z.boolean().optional(),
   scheduled_at: z.string().datetime().optional(),
-  price: z.number().nonnegative().optional(),
+  estimated_cost: z.number().nonnegative().optional(),
   notes: z.string().max(2000).optional(),
 });
 
@@ -18,37 +19,37 @@ export const createBooking = createServerFn({ method: "POST" })
     const sb = context.supabase as any;
     const userId = context.userId;
 
-    const { data: home } = await sb
+    const { data: home, error: homeErr } = await sb
       .from("homes")
-      .select("realtor_id")
+      .select("id, realtor_id")
       .eq("owner_id", userId)
       .limit(1)
       .maybeSingle();
-    const realtor_id: string | null = home?.realtor_id ?? null;
+    if (homeErr) throw new Error(homeErr.message);
+    if (!home?.id) throw new Error("Please add your home first before booking a pro.");
 
-    let commission_rate = 10;
-    if (realtor_id) {
-      const { data: rate } = await sb
-        .from("realtor_commission_rates")
-        .select("rate")
-        .eq("realtor_id", realtor_id)
-        .eq("provider_id", data.provider_id)
-        .maybeSingle();
-      if (rate?.rate != null) commission_rate = Number(rate.rate);
-    }
+    const { data: provider } = await sb
+      .from("service_providers")
+      .select("name")
+      .eq("id", data.provider_id)
+      .maybeSingle();
+
+    const title = data.title ?? `${data.category} · ${provider?.name ?? "Service"}`;
 
     const { data: row, error } = await sb
       .from("bookings")
       .insert({
-        homeowner_id: userId,
+        owner_id: userId,
+        home_id: home.id,
+        realtor_id: home.realtor_id ?? null,
         provider_id: data.provider_id,
-        realtor_id,
         category: data.category,
-        service_type: data.service_type,
+        title,
+        is_recurring: data.is_recurring ?? false,
         scheduled_at: data.scheduled_at ?? null,
-        price: data.price ?? null,
+        estimated_cost: data.estimated_cost ?? null,
         notes: data.notes ?? null,
-        commission_rate,
+        status: "requested",
       })
       .select("id")
       .single();
@@ -66,7 +67,7 @@ export const cancelBooking = createServerFn({ method: "POST" })
       .from("bookings")
       .update({ status: "cancelled" })
       .eq("id", data.id)
-      .eq("homeowner_id", context.userId);
+      .eq("owner_id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -77,18 +78,13 @@ export const setBookingPrice = createServerFn({ method: "POST" })
     z.object({
       id: z.string().uuid(),
       price: z.number().nonnegative().nullable(),
-      commission_rate: z.number().min(0).max(100).optional(),
-      commission_status: z.enum(["pending", "paid", "waived"]).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const sb = context.supabase as any;
-    const patch: Record<string, unknown> = { price: data.price };
-    if (data.commission_rate != null) patch.commission_rate = data.commission_rate;
-    if (data.commission_status) patch.commission_status = data.commission_status;
     const { error } = await sb
       .from("bookings")
-      .update(patch)
+      .update({ final_cost: data.price })
       .eq("id", data.id)
       .eq("realtor_id", context.userId);
     if (error) throw new Error(error.message);
@@ -99,7 +95,7 @@ export const setProviderCommission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
-      provider_id: z.string().uuid(),
+      category: z.string().min(1).max(64),
       rate: z.number().min(0).max(100),
     }).parse(d),
   )
@@ -108,8 +104,8 @@ export const setProviderCommission = createServerFn({ method: "POST" })
     const { error } = await sb
       .from("realtor_commission_rates")
       .upsert(
-        { realtor_id: context.userId, provider_id: data.provider_id, rate: data.rate },
-        { onConflict: "realtor_id,provider_id" },
+        { realtor_id: context.userId, category: data.category, rate_percent: data.rate },
+        { onConflict: "realtor_id,category" },
       );
     if (error) throw new Error(error.message);
     return { ok: true };

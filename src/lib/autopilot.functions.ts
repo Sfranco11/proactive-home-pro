@@ -11,6 +11,7 @@ const cadenceSchema = z.enum([
 const createSchema = z.object({
   provider_id: z.string().uuid(),
   category: z.string().min(1).max(64),
+  title: z.string().min(1).max(120).optional(),
   cadence: cadenceSchema,
   interval_days: z.number().int().min(1).max(365).optional(),
   notes: z.string().max(1000).optional(),
@@ -26,18 +27,28 @@ export const createAutopilotSchedule = createServerFn({ method: "POST" })
 
     const { data: home } = await sb
       .from("homes").select("id").eq("owner_id", userId).limit(1).maybeSingle();
+    if (!home?.id) throw new Error("Please add your home first before scheduling AutoPilot.");
+
+    const { data: provider } = await sb
+      .from("service_providers")
+      .select("name")
+      .eq("id", data.provider_id)
+      .maybeSingle();
 
     const next = data.first_run_at
       ? new Date(data.first_run_at)
       : nextRunFromCadence(data.cadence as Cadence);
 
+    const title = data.title ?? `${data.category} · ${provider?.name ?? "AutoPilot"}`;
+
     const { data: row, error } = await sb
       .from("autopilot_schedules")
       .insert({
-        homeowner_id: userId,
-        home_id: home?.id ?? null,
+        owner_id: userId,
+        home_id: home.id,
         category: data.category,
-        preferred_provider_id: data.provider_id,
+        title,
+        preferred_partner_id: data.provider_id,
         cadence: data.cadence,
         next_run_at: next.toISOString(),
         notes: data.notes ?? null,
@@ -59,7 +70,7 @@ export const toggleAutopilotSchedule = createServerFn({ method: "POST" })
       .from("autopilot_schedules")
       .update({ active: data.active })
       .eq("id", data.id)
-      .eq("homeowner_id", context.userId);
+      .eq("owner_id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -73,7 +84,7 @@ export const deleteAutopilotSchedule = createServerFn({ method: "POST" })
       .from("autopilot_schedules")
       .delete()
       .eq("id", data.id)
-      .eq("homeowner_id", context.userId);
+      .eq("owner_id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

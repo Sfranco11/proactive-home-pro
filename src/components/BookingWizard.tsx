@@ -75,7 +75,7 @@ export function BookingWizard({ providerId, providerName, category, onClose }: P
         data: {
           provider_id: providerId,
           category,
-          service_type: mode === "one_time" ? "one_time" : "recurring",
+          is_recurring: mode !== "one_time",
           scheduled_at,
           notes: notes || undefined,
         },

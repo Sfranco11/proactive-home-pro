@@ -7,9 +7,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { setBookingPrice, setProviderCommission } from "@/lib/bookings.functions";
+import { PRO_CATEGORIES } from "@/lib/pro-categories";
 
 export const Route = createFileRoute("/_app/realtor/revenue")({
   component: RealtorRevenue,
@@ -20,20 +20,19 @@ interface BookingRow {
   status: string;
   category: string;
   created_at: string;
-  price: number | null;
-  commission_rate: number;
-  commission_amount: number | null;
-  commission_status: string;
+  final_cost: number | null;
   provider: { id: string; name: string } | null;
 }
 
 interface RateRow {
-  provider_id: string;
-  rate: number;
+  category: string;
+  rate_percent: number;
 }
 
+const DEFAULT_RATE = 10;
+
 function RealtorRevenue() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [bookings, setBookings] = useState<BookingRow[] | null>(null);
   const [rates, setRates] = useState<RateRow[]>([]);
   const updateBooking = useServerFn(setBookingPrice);
@@ -43,15 +42,13 @@ function RealtorRevenue() {
     if (!user) return;
     (supabase as any)
       .from("bookings")
-      .select(
-        "id, status, category, created_at, price, commission_rate, commission_amount, commission_status, provider:service_providers(id, name)",
-      )
+      .select("id, status, category, created_at, final_cost, provider:service_providers(id, name)")
       .eq("realtor_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data }: any) => setBookings(data ?? []));
     (supabase as any)
       .from("realtor_commission_rates")
-      .select("provider_id, rate")
+      .select("category, rate_percent")
       .eq("realtor_id", user.id)
       .then(({ data }: any) => setRates(data ?? []));
   };
@@ -61,104 +58,82 @@ function RealtorRevenue() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  const rateMap = useMemo(() => {
+    const m = new Map<string, number>();
+    rates.forEach((r) => m.set(r.category, Number(r.rate_percent)));
+    return m;
+  }, [rates]);
+
   const kpi = useMemo(() => {
     const all = bookings ?? [];
     const completed = all.filter((b) => b.status === "completed");
-    const revenue = completed.reduce((s, b) => s + Number(b.price ?? 0), 0);
-    const commissionPaid = all
-      .filter((b) => b.commission_status === "paid")
-      .reduce((s, b) => s + Number(b.commission_amount ?? 0), 0);
-    const commissionPending = all
-      .filter((b) => b.commission_status === "pending" && b.status === "completed")
-      .reduce((s, b) => s + Number(b.commission_amount ?? 0), 0);
+    const revenue = completed.reduce((s, b) => s + Number(b.final_cost ?? 0), 0);
+    const commissionEarned = completed.reduce((s, b) => {
+      const rate = rateMap.get(b.category) ?? DEFAULT_RATE;
+      return s + Number(b.final_cost ?? 0) * (rate / 100);
+    }, 0);
     const conversion = all.length ? Math.round((completed.length / all.length) * 100) : 0;
     return {
       referrals: all.length,
       completed: completed.length,
       revenue,
-      commissionPaid,
-      commissionPending,
+      commissionEarned,
       conversion,
     };
-  }, [bookings]);
-
-  const providers = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; rate: number }>();
-    (bookings ?? []).forEach((b) => {
-      if (b.provider && !map.has(b.provider.id)) {
-        const r = rates.find((x) => x.provider_id === b.provider!.id);
-        map.set(b.provider.id, { id: b.provider.id, name: b.provider.name, rate: r ? Number(r.rate) : 10 });
-      }
-    });
-    return Array.from(map.values());
-  }, [bookings, rates]);
+  }, [bookings, rateMap]);
 
   const exportCsv = () => {
-    const rows = [
-      ["Date", "Provider", "Category", "Status", "Price", "Rate %", "Commission", "Commission Status"],
-      ...(bookings ?? []).map((b) => [
+    if (!bookings?.length) return;
+    const header = ["Date", "Provider", "Category", "Status", "Final cost", "Commission %", "Commission $"];
+    const rows = bookings.map((b) => {
+      const rate = rateMap.get(b.category) ?? DEFAULT_RATE;
+      const commission = b.status === "completed" ? Number(b.final_cost ?? 0) * (rate / 100) : 0;
+      return [
         new Date(b.created_at).toISOString().slice(0, 10),
         b.provider?.name ?? "",
         b.category,
         b.status,
-        b.price ?? "",
-        b.commission_rate,
-        b.commission_amount ?? "",
-        b.commission_status,
-      ]),
-    ];
-    const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+        Number(b.final_cost ?? 0).toFixed(2),
+        rate.toFixed(1),
+        commission.toFixed(2),
+      ];
+    });
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `commission-report-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+    a.href = url; a.download = "revenue.csv"; a.click();
     URL.revokeObjectURL(url);
   };
 
-  if (profile?.role !== "realtor") {
-    return (
-      <>
-        <AppHeader title="Revenue" />
-        <main className="container-app py-6">
-          <p className="text-sm text-muted-foreground">Realtor accounts only.</p>
-        </main>
-      </>
-    );
-  }
+  const fmt = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
   return (
     <>
-      <AppHeader title="Revenue" subtitle="Bookings & commissions across your network" />
+      <AppHeader title="Revenue" subtitle="Bookings & commissions from your homeowners" />
       <main className="container-app py-5 space-y-5 pb-32">
-        <Link to="/realtor" className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-3.5 w-3.5" /> Dashboard
+        <Link to="/realtor" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-3.5 w-3.5" /> Realtor home
         </Link>
 
-        {/* KPIs */}
-        <section className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Kpi icon={<TrendingUp className="h-4 w-4" />} label="Referrals" value={String(kpi.referrals)} />
-          <Kpi icon={<CheckCircle2 className="h-4 w-4" />} label="Completed" value={`${kpi.completed} (${kpi.conversion}%)`} />
-          <Kpi icon={<DollarSign className="h-4 w-4" />} label="Revenue generated" value={`$${kpi.revenue.toFixed(0)}`} />
-          <Kpi icon={<Clock className="h-4 w-4" />} label="Commission pending" value={`$${kpi.commissionPending.toFixed(0)}`} />
-          <div className="col-span-2">
-            <Kpi icon={<DollarSign className="h-4 w-4" />} label="Commission paid" value={`$${kpi.commissionPaid.toFixed(0)}`} />
-          </div>
-        </section>
+          <Kpi icon={<CheckCircle2 className="h-4 w-4" />} label="Completed" value={String(kpi.completed)} />
+          <Kpi icon={<DollarSign className="h-4 w-4" />} label="Service revenue" value={fmt(kpi.revenue)} />
+          <Kpi icon={<Clock className="h-4 w-4" />} label="Commission earned" value={fmt(kpi.commissionEarned)} />
+        </div>
 
-        {/* Per-provider rate */}
         <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <h2 className="font-display text-lg font-semibold">Commission rates</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Override the default 10% per provider. Applies to new bookings.</p>
+          <h2 className="font-display text-lg font-semibold">Commission rates by category</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Default {DEFAULT_RATE}%. Override per category.</p>
           <div className="mt-3 space-y-2">
-            {providers.length === 0 && <p className="text-xs text-muted-foreground">No bookings to set rates for yet.</p>}
-            {providers.map((p) => (
-              <ProviderRateRow
-                key={p.id}
-                provider={p}
+            {PRO_CATEGORIES.map((c) => (
+              <CategoryRateRow
+                key={c.key}
+                label={c.label}
+                value={rateMap.get(c.key) ?? DEFAULT_RATE}
                 onSave={async (rate) => {
-                  await updateRate({ data: { provider_id: p.id, rate } });
+                  await updateRate({ data: { category: c.key, rate } });
                   toast.success("Rate saved");
                   load();
                 }}
@@ -167,7 +142,6 @@ function RealtorRevenue() {
           </div>
         </section>
 
-        {/* Payout table */}
         <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold">Bookings</h2>
@@ -184,8 +158,9 @@ function RealtorRevenue() {
               <BookingPayoutRow
                 key={b.id}
                 booking={b}
-                onSave={async (patch) => {
-                  await updateBooking({ data: { id: b.id, ...patch } });
+                rate={rateMap.get(b.category) ?? DEFAULT_RATE}
+                onSave={async (price) => {
+                  await updateBooking({ data: { id: b.id, price } });
                   toast.success("Updated");
                   load();
                 }}
@@ -201,36 +176,20 @@ function RealtorRevenue() {
 function Kpi({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {icon}
-        {label}
-      </div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">{icon}{label}</div>
       <p className="mt-2 font-display text-2xl font-semibold">{value}</p>
     </div>
   );
 }
 
-function ProviderRateRow({
-  provider,
-  onSave,
-}: {
-  provider: { id: string; name: string; rate: number };
-  onSave: (rate: number) => Promise<void>;
-}) {
-  const [rate, setRate] = useState(String(provider.rate));
+function CategoryRateRow({ label, value, onSave }: { label: string; value: number; onSave: (rate: number) => Promise<void> }) {
+  const [rate, setRate] = useState(String(value));
+  useEffect(() => setRate(String(value)), [value]);
   return (
     <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background p-2.5">
-      <span className="truncate text-sm">{provider.name}</span>
+      <span className="truncate text-sm">{label}</span>
       <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          min={0}
-          max={100}
-          step={0.1}
-          value={rate}
-          onChange={(e) => setRate(e.target.value)}
-          className="h-8 w-20"
-        />
+        <Input type="number" min={0} max={100} step={0.1} value={rate} onChange={(e) => setRate(e.target.value)} className="h-8 w-20" />
         <span className="text-xs text-muted-foreground">%</span>
         <Button size="sm" variant="outline" onClick={() => onSave(Number(rate))}>Save</Button>
       </div>
@@ -238,15 +197,8 @@ function ProviderRateRow({
   );
 }
 
-function BookingPayoutRow({
-  booking,
-  onSave,
-}: {
-  booking: BookingRow;
-  onSave: (patch: { price: number | null; commission_status?: "pending" | "paid" | "waived" }) => Promise<void>;
-}) {
-  const [price, setPrice] = useState(booking.price != null ? String(booking.price) : "");
-  const [cstatus, setCstatus] = useState(booking.commission_status);
+function BookingPayoutRow({ booking, rate, onSave }: { booking: BookingRow; rate: number; onSave: (price: number | null) => Promise<void> }) {
+  const [price, setPrice] = useState(booking.final_cost != null ? String(booking.final_cost) : "");
   return (
     <div className="rounded-xl border border-border bg-background p-3 text-sm">
       <div className="flex items-center justify-between gap-2">
@@ -256,38 +208,11 @@ function BookingPayoutRow({
             {booking.category} · {new Date(booking.created_at).toLocaleDateString()} · {booking.status}
           </p>
         </div>
-        <span className="text-xs text-muted-foreground">{booking.commission_rate}%</span>
+        <span className="text-xs text-muted-foreground">{rate}%</span>
       </div>
-      <div className="mt-2 grid grid-cols-[1fr_auto_auto] items-center gap-2">
-        <Input
-          type="number"
-          min={0}
-          step={0.01}
-          placeholder="Price $"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="h-8"
-        />
-        <Select value={cstatus} onValueChange={setCstatus}>
-          <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="waived">Waived</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            onSave({
-              price: price === "" ? null : Number(price),
-              commission_status: cstatus as "pending" | "paid" | "waived",
-            })
-          }
-        >
-          Save
-        </Button>
+      <div className="mt-2 grid grid-cols-[1fr_auto] items-center gap-2">
+        <Input type="number" min={0} step={0.01} placeholder="Final cost $" value={price} onChange={(e) => setPrice(e.target.value)} className="h-8" />
+        <Button size="sm" variant="outline" onClick={() => onSave(price === "" ? null : Number(price))}>Save</Button>
       </div>
     </div>
   );
