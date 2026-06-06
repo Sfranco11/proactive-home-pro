@@ -54,7 +54,7 @@ function AuthPage() {
       password: parsed.data.password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: parsed.data.fullName ?? "", role: mode },
+        data: { full_name: parsed.data.fullName ?? "" },
       },
     });
     setBusy(false);
