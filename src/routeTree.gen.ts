@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RCodeRouteImport } from './routes/r.$code'
+import { Route as BookTokenRouteImport } from './routes/book.$token'
 import { Route as AppUpgradeRouteImport } from './routes/_app.upgrade'
 import { Route as AppTriageRouteImport } from './routes/_app.triage'
 import { Route as AppSystemsRouteImport } from './routes/_app.systems'
@@ -23,8 +24,12 @@ import { Route as AppPartnersRouteImport } from './routes/_app.partners'
 import { Route as AppLogsRouteImport } from './routes/_app.logs'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppCalendarRouteImport } from './routes/_app.calendar'
+import { Route as AppBookingsRouteImport } from './routes/_app.bookings'
+import { Route as AppRealtorRevenueRouteImport } from './routes/_app.realtor.revenue'
 import { Route as AppProsIdRouteImport } from './routes/_app.pros.$id'
+import { Route as AppBookingsIdRouteImport } from './routes/_app.bookings.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicBookingsTokenRouteImport } from './routes/api/public/bookings.$token'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -48,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
 const RCodeRoute = RCodeRouteImport.update({
   id: '/r/$code',
   path: '/r/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookTokenRoute = BookTokenRouteImport.update({
+  id: '/book/$token',
+  path: '/book/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppUpgradeRoute = AppUpgradeRouteImport.update({
@@ -95,10 +105,25 @@ const AppCalendarRoute = AppCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBookingsRoute = AppBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRealtorRevenueRoute = AppRealtorRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
+  getParentRoute: () => AppRealtorRoute,
+} as any)
 const AppProsIdRoute = AppProsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AppProsRoute,
+} as any)
+const AppBookingsIdRoute = AppBookingsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppBookingsRoute,
 } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
@@ -106,39 +131,54 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBookingsTokenRoute = ApiPublicBookingsTokenRouteImport.update({
+  id: '/api/public/bookings/$token',
+  path: '/api/public/bookings/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/bookings': typeof AppBookingsRouteWithChildren
   '/calendar': typeof AppCalendarRoute
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
   '/pros': typeof AppProsRouteWithChildren
-  '/realtor': typeof AppRealtorRoute
+  '/realtor': typeof AppRealtorRouteWithChildren
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
+  '/book/$token': typeof BookTokenRoute
   '/r/$code': typeof RCodeRoute
+  '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
+  '/realtor/revenue': typeof AppRealtorRevenueRoute
+  '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/bookings': typeof AppBookingsRouteWithChildren
   '/calendar': typeof AppCalendarRoute
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
   '/pros': typeof AppProsRouteWithChildren
-  '/realtor': typeof AppRealtorRoute
+  '/realtor': typeof AppRealtorRouteWithChildren
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
+  '/book/$token': typeof BookTokenRoute
   '/r/$code': typeof RCodeRoute
+  '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
+  '/realtor/revenue': typeof AppRealtorRevenueRoute
+  '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
@@ -147,17 +187,22 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/_app/bookings': typeof AppBookingsRouteWithChildren
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/partners': typeof AppPartnersRoute
   '/_app/pros': typeof AppProsRouteWithChildren
-  '/_app/realtor': typeof AppRealtorRoute
+  '/_app/realtor': typeof AppRealtorRouteWithChildren
   '/_app/systems': typeof AppSystemsRoute
   '/_app/triage': typeof AppTriageRoute
   '/_app/upgrade': typeof AppUpgradeRoute
+  '/book/$token': typeof BookTokenRoute
   '/r/$code': typeof RCodeRoute
+  '/_app/bookings/$id': typeof AppBookingsIdRoute
   '/_app/pros/$id': typeof AppProsIdRoute
+  '/_app/realtor/revenue': typeof AppRealtorRevenueRoute
+  '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
@@ -166,6 +211,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/onboarding'
+    | '/bookings'
     | '/calendar'
     | '/home'
     | '/logs'
@@ -175,14 +221,19 @@ export interface FileRouteTypes {
     | '/systems'
     | '/triage'
     | '/upgrade'
+    | '/book/$token'
     | '/r/$code'
+    | '/bookings/$id'
     | '/pros/$id'
+    | '/realtor/revenue'
+    | '/api/public/bookings/$token'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/onboarding'
+    | '/bookings'
     | '/calendar'
     | '/home'
     | '/logs'
@@ -192,8 +243,12 @@ export interface FileRouteTypes {
     | '/systems'
     | '/triage'
     | '/upgrade'
+    | '/book/$token'
     | '/r/$code'
+    | '/bookings/$id'
     | '/pros/$id'
+    | '/realtor/revenue'
+    | '/api/public/bookings/$token'
     | '/api/public/payments/webhook'
   id:
     | '__root__'
@@ -201,6 +256,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/auth'
     | '/onboarding'
+    | '/_app/bookings'
     | '/_app/calendar'
     | '/_app/home'
     | '/_app/logs'
@@ -210,8 +266,12 @@ export interface FileRouteTypes {
     | '/_app/systems'
     | '/_app/triage'
     | '/_app/upgrade'
+    | '/book/$token'
     | '/r/$code'
+    | '/_app/bookings/$id'
     | '/_app/pros/$id'
+    | '/_app/realtor/revenue'
+    | '/api/public/bookings/$token'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -220,7 +280,9 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
+  BookTokenRoute: typeof BookTokenRoute
   RCodeRoute: typeof RCodeRoute
+  ApiPublicBookingsTokenRoute: typeof ApiPublicBookingsTokenRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
@@ -259,6 +321,13 @@ declare module '@tanstack/react-router' {
       path: '/r/$code'
       fullPath: '/r/$code'
       preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book/$token': {
+      id: '/book/$token'
+      path: '/book/$token'
+      fullPath: '/book/$token'
+      preLoaderRoute: typeof BookTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/upgrade': {
@@ -324,12 +393,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/bookings': {
+      id: '/_app/bookings'
+      path: '/bookings'
+      fullPath: '/bookings'
+      preLoaderRoute: typeof AppBookingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/realtor/revenue': {
+      id: '/_app/realtor/revenue'
+      path: '/revenue'
+      fullPath: '/realtor/revenue'
+      preLoaderRoute: typeof AppRealtorRevenueRouteImport
+      parentRoute: typeof AppRealtorRoute
+    }
     '/_app/pros/$id': {
       id: '/_app/pros/$id'
       path: '/$id'
       fullPath: '/pros/$id'
       preLoaderRoute: typeof AppProsIdRouteImport
       parentRoute: typeof AppProsRoute
+    }
+    '/_app/bookings/$id': {
+      id: '/_app/bookings/$id'
+      path: '/$id'
+      fullPath: '/bookings/$id'
+      preLoaderRoute: typeof AppBookingsIdRouteImport
+      parentRoute: typeof AppBookingsRoute
     }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
@@ -338,8 +428,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bookings/$token': {
+      id: '/api/public/bookings/$token'
+      path: '/api/public/bookings/$token'
+      fullPath: '/api/public/bookings/$token'
+      preLoaderRoute: typeof ApiPublicBookingsTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface AppBookingsRouteChildren {
+  AppBookingsIdRoute: typeof AppBookingsIdRoute
+}
+
+const AppBookingsRouteChildren: AppBookingsRouteChildren = {
+  AppBookingsIdRoute: AppBookingsIdRoute,
+}
+
+const AppBookingsRouteWithChildren = AppBookingsRoute._addFileChildren(
+  AppBookingsRouteChildren,
+)
 
 interface AppProsRouteChildren {
   AppProsIdRoute: typeof AppProsIdRoute
@@ -352,25 +461,39 @@ const AppProsRouteChildren: AppProsRouteChildren = {
 const AppProsRouteWithChildren =
   AppProsRoute._addFileChildren(AppProsRouteChildren)
 
+interface AppRealtorRouteChildren {
+  AppRealtorRevenueRoute: typeof AppRealtorRevenueRoute
+}
+
+const AppRealtorRouteChildren: AppRealtorRouteChildren = {
+  AppRealtorRevenueRoute: AppRealtorRevenueRoute,
+}
+
+const AppRealtorRouteWithChildren = AppRealtorRoute._addFileChildren(
+  AppRealtorRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppBookingsRoute: typeof AppBookingsRouteWithChildren
   AppCalendarRoute: typeof AppCalendarRoute
   AppHomeRoute: typeof AppHomeRoute
   AppLogsRoute: typeof AppLogsRoute
   AppPartnersRoute: typeof AppPartnersRoute
   AppProsRoute: typeof AppProsRouteWithChildren
-  AppRealtorRoute: typeof AppRealtorRoute
+  AppRealtorRoute: typeof AppRealtorRouteWithChildren
   AppSystemsRoute: typeof AppSystemsRoute
   AppTriageRoute: typeof AppTriageRoute
   AppUpgradeRoute: typeof AppUpgradeRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppBookingsRoute: AppBookingsRouteWithChildren,
   AppCalendarRoute: AppCalendarRoute,
   AppHomeRoute: AppHomeRoute,
   AppLogsRoute: AppLogsRoute,
   AppPartnersRoute: AppPartnersRoute,
   AppProsRoute: AppProsRouteWithChildren,
-  AppRealtorRoute: AppRealtorRoute,
+  AppRealtorRoute: AppRealtorRouteWithChildren,
   AppSystemsRoute: AppSystemsRoute,
   AppTriageRoute: AppTriageRoute,
   AppUpgradeRoute: AppUpgradeRoute,
@@ -383,7 +506,9 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
+  BookTokenRoute: BookTokenRoute,
   RCodeRoute: RCodeRoute,
+  ApiPublicBookingsTokenRoute: ApiPublicBookingsTokenRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport

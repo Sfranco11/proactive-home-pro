@@ -2,10 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Star, MapPin, Phone, Mail, Globe, CalendarPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { PRO_CATEGORY_MAP } from "@/lib/pro-categories";
 import { toast } from "sonner";
+import { createBooking } from "@/lib/bookings.functions";
 
 export const Route = createFileRoute("/_app/pros/$id")({
   component: ProDetailPage,
@@ -31,6 +33,8 @@ function ProDetailPage() {
   const navigate = useNavigate();
   const [provider, setProvider] = useState<Provider | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [booking, setBooking] = useState(false);
+  const bookFn = useServerFn(createBooking);
 
   useEffect(() => {
     supabase
@@ -142,13 +146,28 @@ function ProDetailPage() {
         <Button
           size="lg"
           className="w-full"
-          onClick={() => toast.info("Booking flow launches in the next update.")}
+          disabled={booking || !provider}
+          onClick={async () => {
+            if (!provider) return;
+            setBooking(true);
+            try {
+              const { id: bookingId } = await bookFn({
+                data: { provider_id: provider.id, category: provider.category },
+              });
+              toast.success("Booking requested");
+              navigate({ to: "/bookings/$id", params: { id: bookingId } });
+            } catch (e: any) {
+              toast.error(e?.message ?? "Could not create booking");
+            } finally {
+              setBooking(false);
+            }
+          }}
         >
           <CalendarPlus className="mr-2 h-4 w-4" />
-          Book service
+          {booking ? "Requesting…" : "Book service"}
         </Button>
         <p className="text-center text-[11px] text-muted-foreground">
-          Bookings, live tracking, and priority scheduling unlock with Premium.
+          Live tracking, messaging, and priority scheduling included with Premium.
         </p>
       </main>
     </>
