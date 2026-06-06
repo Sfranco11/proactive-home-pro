@@ -137,14 +137,23 @@ function ProsDirectoryPage() {
               const list = grouped.get(c.key) ?? [];
               if (list.length === 0) return null;
               return (
-                <CategorySection key={c.key} categoryKey={c.key} list={list} isPremium={isPremium} onSeeAll={() => setCategory(c.key)} />
+                <CategorySection key={c.key} categoryKey={c.key} list={list} isPremium={isPremium} onSeeAll={() => setCategory(c.key)} onBook={setBookingFor} />
               );
             })
           : (() => {
               const list = grouped.get(category) ?? [];
-              return <CategorySection key={category} categoryKey={category} list={list} isPremium={isPremium} showAll />;
+              return <CategorySection key={category} categoryKey={category} list={list} isPremium={isPremium} showAll onBook={setBookingFor} />;
             })()}
       </main>
+
+      {bookingFor && (
+        <BookingWizard
+          providerId={bookingFor.id}
+          providerName={bookingFor.name}
+          category={bookingFor.category}
+          onClose={() => setBookingFor(null)}
+        />
+      )}
     </>
   );
 }
@@ -163,13 +172,14 @@ function CategoryChip({ active, onClick, children }: { active: boolean; onClick:
 }
 
 function CategorySection({
-  categoryKey, list, isPremium, showAll, onSeeAll,
+  categoryKey, list, isPremium, showAll, onSeeAll, onBook,
 }: {
   categoryKey: string;
   list: Provider[];
   isPremium: boolean;
   showAll?: boolean;
   onSeeAll?: () => void;
+  onBook: (p: Provider) => void;
 }) {
   const cat = PRO_CATEGORY_MAP[categoryKey];
   if (!cat) return null;
@@ -197,63 +207,75 @@ function CategorySection({
         {preferred.length > 0 && (
           <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Recommended by your realtor</div>
         )}
-        {preferred.map((p) => <ProviderCard key={p.id} provider={p} locked={false} />)}
+        {preferred.map((p) => <ProviderCard key={p.id} provider={p} locked={false} onBook={onBook} />)}
         {preferred.length > 0 && others.length > 0 && (
           <div className="pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">More vetted pros</div>
         )}
         {others.map((p, i) => {
           const locked = !isPremium && (p.is_premium_only || i >= FREE_PER_CATEGORY);
-          return <ProviderCard key={p.id} provider={p} locked={locked} />;
+          return <ProviderCard key={p.id} provider={p} locked={locked} onBook={onBook} />;
         })}
       </div>
     </section>
   );
 }
 
-function ProviderCard({ provider, locked }: { provider: Provider; locked: boolean }) {
-  const body = (
+function ProviderCard({ provider, locked, onBook }: { provider: Provider; locked: boolean; onBook: (p: Provider) => void }) {
+  return (
     <div className={`rounded-2xl border border-border bg-card p-4 shadow-soft transition ${locked ? "opacity-90" : "hover:-translate-y-0.5 hover:shadow-md"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h4 className="truncate font-display font-semibold">{provider.name}</h4>
-            {locked && <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-            {provider.verified && !locked && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-primary" />}
-          </div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1 font-medium text-foreground">
-              <Star className="h-3.5 w-3.5 fill-gold text-gold" />
-              {provider.rating?.toFixed(1) ?? "—"}
-            </span>
-            <span>· {provider.review_count} reviews</span>
+      <Link
+        to="/pros/$id"
+        params={{ id: provider.id }}
+        className="block"
+        onClick={(e) => { if (locked) e.preventDefault(); }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h4 className="truncate font-display font-semibold">{provider.name}</h4>
+              {locked && <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+              {provider.verified && !locked && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-primary" />}
+            </div>
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                <Star className="h-3.5 w-3.5 fill-gold text-gold" />
+                {provider.rating?.toFixed(1) ?? "—"}
+              </span>
+              <span>· {provider.review_count} reviews</span>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-        {provider.service_area && (
-          <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{provider.service_area}</span>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+          {provider.service_area && (
+            <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{provider.service_area}</span>
+          )}
+          {provider.licensed && (
+            <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-emerald-600" />Licensed</span>
+          )}
+          {provider.insured && (
+            <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-emerald-600" />Insured</span>
+          )}
+          {provider.response_time_minutes != null && (
+            <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />~{provider.response_time_minutes}m response</span>
+          )}
+        </div>
+        {provider.description && (
+          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{provider.description}</p>
         )}
-        {provider.licensed && (
-          <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-emerald-600" />Licensed</span>
+      </Link>
+      <div className="mt-3">
+        {locked ? (
+          <Link to="/upgrade" className="block">
+            <Button variant="outline" size="sm" className="w-full">
+              <Lock className="mr-1.5 h-3.5 w-3.5" /> Premium · Unlock to book
+            </Button>
+          </Link>
+        ) : (
+          <Button size="sm" className="w-full" onClick={() => onBook(provider)}>
+            <CalendarPlus className="mr-1.5 h-3.5 w-3.5" /> Book now
+          </Button>
         )}
-        {provider.insured && (
-          <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-emerald-600" />Insured</span>
-        )}
-        {provider.response_time_minutes != null && (
-          <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />~{provider.response_time_minutes}m response</span>
-        )}
-      </div>
-      {provider.description && (
-        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{provider.description}</p>
-      )}
-      <div className="mt-3 flex items-center justify-between">
-        <span className={`text-xs font-medium ${locked ? "text-muted-foreground" : "text-primary"}`}>
-          {locked ? "Premium · Unlock to book" : "Book now →"}
-        </span>
       </div>
     </div>
   );
-
-  if (locked) return <Link to="/upgrade" className="block">{body}</Link>;
-  return <Link to="/pros/$id" params={{ id: provider.id }} className="block">{body}</Link>;
 }
