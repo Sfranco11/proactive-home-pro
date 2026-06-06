@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RCodeRouteImport } from './routes/r.$code'
+import { Route as AppUpgradeRouteImport } from './routes/_app.upgrade'
 import { Route as AppTriageRouteImport } from './routes/_app.triage'
 import { Route as AppSystemsRouteImport } from './routes/_app.systems'
 import { Route as AppRealtorRouteImport } from './routes/_app.realtor'
@@ -47,6 +48,11 @@ const RCodeRoute = RCodeRouteImport.update({
   id: '/r/$code',
   path: '/r/$code',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppUpgradeRoute = AppUpgradeRouteImport.update({
+  id: '/upgrade',
+  path: '/upgrade',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppTriageRoute = AppTriageRouteImport.update({
   id: '/triage',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/realtor': typeof AppRealtorRoute
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
+  '/upgrade': typeof AppUpgradeRoute
   '/r/$code': typeof RCodeRoute
   '/pros/$id': typeof AppProsIdRoute
 }
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/realtor': typeof AppRealtorRoute
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
+  '/upgrade': typeof AppUpgradeRoute
   '/r/$code': typeof RCodeRoute
   '/pros/$id': typeof AppProsIdRoute
 }
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/_app/realtor': typeof AppRealtorRoute
   '/_app/systems': typeof AppSystemsRoute
   '/_app/triage': typeof AppTriageRoute
+  '/_app/upgrade': typeof AppUpgradeRoute
   '/r/$code': typeof RCodeRoute
   '/_app/pros/$id': typeof AppProsIdRoute
 }
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/realtor'
     | '/systems'
     | '/triage'
+    | '/upgrade'
     | '/r/$code'
     | '/pros/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/realtor'
     | '/systems'
     | '/triage'
+    | '/upgrade'
     | '/r/$code'
     | '/pros/$id'
   id:
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/_app/realtor'
     | '/_app/systems'
     | '/_app/triage'
+    | '/_app/upgrade'
     | '/r/$code'
     | '/_app/pros/$id'
   fileRoutesById: FileRoutesById
@@ -234,6 +246,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/r/$code'
       preLoaderRoute: typeof RCodeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/upgrade': {
+      id: '/_app/upgrade'
+      path: '/upgrade'
+      fullPath: '/upgrade'
+      preLoaderRoute: typeof AppUpgradeRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/triage': {
       id: '/_app/triage'
@@ -321,6 +340,7 @@ interface AppRouteChildren {
   AppRealtorRoute: typeof AppRealtorRoute
   AppSystemsRoute: typeof AppSystemsRoute
   AppTriageRoute: typeof AppTriageRoute
+  AppUpgradeRoute: typeof AppUpgradeRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -332,6 +352,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRealtorRoute: AppRealtorRoute,
   AppSystemsRoute: AppSystemsRoute,
   AppTriageRoute: AppTriageRoute,
+  AppUpgradeRoute: AppUpgradeRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
