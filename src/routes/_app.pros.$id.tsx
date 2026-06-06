@@ -33,6 +33,8 @@ function ProDetailPage() {
   const navigate = useNavigate();
   const [provider, setProvider] = useState<Provider | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [booking, setBooking] = useState(false);
+  const bookFn = useServerFn(createBooking);
 
   useEffect(() => {
     supabase
