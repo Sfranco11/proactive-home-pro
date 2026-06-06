@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Star, Lock, MapPin, Search as SearchIcon, ShieldCheck, BadgeCheck, Clock } from "lucide-react";
+import { Star, Lock, MapPin, Search as SearchIcon, ShieldCheck, BadgeCheck, Clock, CalendarPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AppHeader } from "@/components/AppHeader";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { PRO_CATEGORIES, PRO_CATEGORY_MAP, FREE_PER_CATEGORY } from "@/lib/pro-categories";
 import { usePremium } from "@/hooks/usePremium";
 import { rankProviders } from "@/lib/marketplace-ranking";
+import { BookingWizard } from "@/components/BookingWizard";
 
 export const Route = createFileRoute("/_app/pros")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -42,6 +44,7 @@ function ProsDirectoryPage() {
   const [category, setCategory] = useState<string>(search.category ?? "all");
   const [query, setQuery] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [bookingFor, setBookingFor] = useState<Provider | null>(null);
   const { isPremium } = usePremium();
 
   useEffect(() => {
