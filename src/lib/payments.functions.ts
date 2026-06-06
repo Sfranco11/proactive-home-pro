@@ -78,7 +78,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' })
           },
         }),
         ...(data.userId && { metadata: { userId: data.userId, managed_payments: 'true' } }),
-      });
+      } as any);
 
       return { clientSecret: session.client_secret ?? '' };
     } catch (error) {
