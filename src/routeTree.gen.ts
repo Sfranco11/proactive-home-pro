@@ -17,6 +17,7 @@ import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as AppTriageRouteImport } from './routes/_app.triage'
 import { Route as AppSystemsRouteImport } from './routes/_app.systems'
 import { Route as AppRealtorRouteImport } from './routes/_app.realtor'
+import { Route as AppProsRouteImport } from './routes/_app.pros'
 import { Route as AppPartnersRouteImport } from './routes/_app.partners'
 import { Route as AppLogsRouteImport } from './routes/_app.logs'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
@@ -61,6 +62,11 @@ const AppRealtorRoute = AppRealtorRouteImport.update({
   path: '/realtor',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProsRoute = AppProsRouteImport.update({
+  id: '/pros',
+  path: '/pros',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPartnersRoute = AppPartnersRouteImport.update({
   id: '/partners',
   path: '/partners',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
+  '/pros': typeof AppProsRoute
   '/realtor': typeof AppRealtorRoute
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
+  '/pros': typeof AppProsRoute
   '/realtor': typeof AppRealtorRoute
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/_app/home': typeof AppHomeRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/partners': typeof AppPartnersRoute
+  '/_app/pros': typeof AppProsRoute
   '/_app/realtor': typeof AppRealtorRoute
   '/_app/systems': typeof AppSystemsRoute
   '/_app/triage': typeof AppTriageRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/logs'
     | '/partners'
+    | '/pros'
     | '/realtor'
     | '/systems'
     | '/triage'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/logs'
     | '/partners'
+    | '/pros'
     | '/realtor'
     | '/systems'
     | '/triage'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/_app/home'
     | '/_app/logs'
     | '/_app/partners'
+    | '/_app/pros'
     | '/_app/realtor'
     | '/_app/systems'
     | '/_app/triage'
@@ -232,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRealtorRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/pros': {
+      id: '/_app/pros'
+      path: '/pros'
+      fullPath: '/pros'
+      preLoaderRoute: typeof AppProsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/partners': {
       id: '/_app/partners'
       path: '/partners'
@@ -268,6 +287,7 @@ interface AppRouteChildren {
   AppHomeRoute: typeof AppHomeRoute
   AppLogsRoute: typeof AppLogsRoute
   AppPartnersRoute: typeof AppPartnersRoute
+  AppProsRoute: typeof AppProsRoute
   AppRealtorRoute: typeof AppRealtorRoute
   AppSystemsRoute: typeof AppSystemsRoute
   AppTriageRoute: typeof AppTriageRoute
@@ -278,6 +298,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppHomeRoute: AppHomeRoute,
   AppLogsRoute: AppLogsRoute,
   AppPartnersRoute: AppPartnersRoute,
+  AppProsRoute: AppProsRoute,
   AppRealtorRoute: AppRealtorRoute,
   AppSystemsRoute: AppSystemsRoute,
   AppTriageRoute: AppTriageRoute,
@@ -295,3 +316,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
