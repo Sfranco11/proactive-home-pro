@@ -22,6 +22,7 @@ import { Route as AppPartnersRouteImport } from './routes/_app.partners'
 import { Route as AppLogsRouteImport } from './routes/_app.logs'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppCalendarRouteImport } from './routes/_app.calendar'
+import { Route as AppProsIdRouteImport } from './routes/_app.pros.$id'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -87,6 +88,11 @@ const AppCalendarRoute = AppCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProsIdRoute = AppProsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppProsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,11 +102,12 @@ export interface FileRoutesByFullPath {
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
-  '/pros': typeof AppProsRoute
+  '/pros': typeof AppProsRouteWithChildren
   '/realtor': typeof AppRealtorRoute
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/r/$code': typeof RCodeRoute
+  '/pros/$id': typeof AppProsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,11 +117,12 @@ export interface FileRoutesByTo {
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
-  '/pros': typeof AppProsRoute
+  '/pros': typeof AppProsRouteWithChildren
   '/realtor': typeof AppRealtorRoute
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/r/$code': typeof RCodeRoute
+  '/pros/$id': typeof AppProsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -126,11 +134,12 @@ export interface FileRoutesById {
   '/_app/home': typeof AppHomeRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/partners': typeof AppPartnersRoute
-  '/_app/pros': typeof AppProsRoute
+  '/_app/pros': typeof AppProsRouteWithChildren
   '/_app/realtor': typeof AppRealtorRoute
   '/_app/systems': typeof AppSystemsRoute
   '/_app/triage': typeof AppTriageRoute
   '/r/$code': typeof RCodeRoute
+  '/_app/pros/$id': typeof AppProsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/systems'
     | '/triage'
     | '/r/$code'
+    | '/pros/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/systems'
     | '/triage'
     | '/r/$code'
+    | '/pros/$id'
   id:
     | '__root__'
     | '/'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/_app/systems'
     | '/_app/triage'
     | '/r/$code'
+    | '/_app/pros/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -279,15 +291,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/pros/$id': {
+      id: '/_app/pros/$id'
+      path: '/$id'
+      fullPath: '/pros/$id'
+      preLoaderRoute: typeof AppProsIdRouteImport
+      parentRoute: typeof AppProsRoute
+    }
   }
 }
+
+interface AppProsRouteChildren {
+  AppProsIdRoute: typeof AppProsIdRoute
+}
+
+const AppProsRouteChildren: AppProsRouteChildren = {
+  AppProsIdRoute: AppProsIdRoute,
+}
+
+const AppProsRouteWithChildren =
+  AppProsRoute._addFileChildren(AppProsRouteChildren)
 
 interface AppRouteChildren {
   AppCalendarRoute: typeof AppCalendarRoute
   AppHomeRoute: typeof AppHomeRoute
   AppLogsRoute: typeof AppLogsRoute
   AppPartnersRoute: typeof AppPartnersRoute
-  AppProsRoute: typeof AppProsRoute
+  AppProsRoute: typeof AppProsRouteWithChildren
   AppRealtorRoute: typeof AppRealtorRoute
   AppSystemsRoute: typeof AppSystemsRoute
   AppTriageRoute: typeof AppTriageRoute
@@ -298,7 +328,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppHomeRoute: AppHomeRoute,
   AppLogsRoute: AppLogsRoute,
   AppPartnersRoute: AppPartnersRoute,
-  AppProsRoute: AppProsRoute,
+  AppProsRoute: AppProsRouteWithChildren,
   AppRealtorRoute: AppRealtorRoute,
   AppSystemsRoute: AppSystemsRoute,
   AppTriageRoute: AppTriageRoute,
