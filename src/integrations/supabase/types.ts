@@ -594,6 +594,7 @@ export type Database = {
           updated_at: string
           verified: boolean
           website: string | null
+          years_in_business: number | null
         }
         Insert: {
           active?: boolean
@@ -617,6 +618,7 @@ export type Database = {
           updated_at?: string
           verified?: boolean
           website?: string | null
+          years_in_business?: number | null
         }
         Update: {
           active?: boolean
@@ -640,6 +642,7 @@ export type Database = {
           updated_at?: string
           verified?: boolean
           website?: string | null
+          years_in_business?: number | null
         }
         Relationships: []
       }
