@@ -1,12 +1,13 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, CalendarCheck, AlertTriangle, Sparkles, LayoutDashboard } from "lucide-react";
+import { Home, CalendarCheck, AlertTriangle, ClipboardList, Sparkles, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 const homeownerItems = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/calendar", label: "Seasons", icon: CalendarCheck },
-  { to: "/triage", label: "Broken", icon: AlertTriangle },
   { to: "/pros", label: "Pros", icon: Sparkles },
+  { to: "/triage", label: "Broken", icon: AlertTriangle },
+  { to: "/logs", label: "Logs", icon: ClipboardList },
 ];
 
 const realtorItems = [
