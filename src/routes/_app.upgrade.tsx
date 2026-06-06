@@ -1,7 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Crown, Check } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Crown, Check, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { usePremium } from "@/hooks/usePremium";
+import { isPaymentsConfigured } from "@/lib/stripe";
+import { createPortalSession } from "@/lib/payments.functions";
+import { getStripeEnvironment } from "@/lib/stripe";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/upgrade")({
   component: UpgradePage,
@@ -16,9 +24,51 @@ const PREMIUM_PERKS = [
   "Auto-scheduled seasonal services",
 ];
 
+type Plan = "premium_monthly" | "premium_yearly";
+
 function UpgradePage() {
+  const navigate = useNavigate();
+  const { isPremium, loading, userId, subscription } = usePremium();
+  const [selected, setSelected] = useState<Plan | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const openPortal = async () => {
+    setPortalLoading(true);
+    try {
+      const result = await createPortalSession({
+        data: { environment: getStripeEnvironment(), returnUrl: window.location.href },
+      });
+      if ("error" in result) throw new Error(result.error);
+      window.open(result.url, "_blank");
+    } catch (e: any) {
+      toast.error(e.message || "Could not open billing portal");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  if (selected) {
+    return (
+      <>
+        <PaymentTestModeBanner />
+        <AppHeader title="Checkout" subtitle="Secure payment" />
+        <main className="container-app py-4">
+          <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="mb-3">
+            ← Back
+          </Button>
+          <StripeEmbeddedCheckout
+            priceId={selected}
+            userId={userId ?? undefined}
+            returnUrl={`${window.location.origin}/upgrade?checkout=success&session_id={CHECKOUT_SESSION_ID}`}
+          />
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
+      <PaymentTestModeBanner />
       <AppHeader title="Go Premium" subtitle="Unlock the full marketplace" />
       <main className="container-app py-6 space-y-6">
         <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-6 shadow-soft">
@@ -40,21 +90,55 @@ function UpgradePage() {
           </ul>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <PlanCard plan="Monthly" price="$9.99" cadence="/ month" badge="7-day free trial" />
-          <PlanCard plan="Annual" price="$79" cadence="/ year" badge="Save 34%" highlight />
-        </div>
-
-        <Button size="lg" className="w-full" disabled>
-          Checkout coming soon
-        </Button>
-        <p className="text-center text-[11px] text-muted-foreground">
-          Stripe checkout activates in the next update.{" "}
-          <Link to="/pros" className="text-primary hover:underline">
-            Browse free pros
-          </Link>{" "}
-          in the meantime.
-        </p>
+        {isPremium ? (
+          <div className="space-y-3 rounded-2xl border border-primary/40 bg-primary/5 p-5 text-center">
+            <Crown className="mx-auto h-6 w-6 text-primary" />
+            <p className="font-display text-lg font-semibold">You're Premium.</p>
+            {subscription?.current_period_end && (
+              <p className="text-xs text-muted-foreground">
+                {subscription.cancel_at_period_end ? "Access ends" : "Renews"}{" "}
+                {new Date(subscription.current_period_end).toLocaleDateString()}
+              </p>
+            )}
+            <Button onClick={openPortal} disabled={portalLoading} className="w-full">
+              {portalLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Manage subscription
+            </Button>
+            <Button variant="ghost" onClick={() => navigate({ to: "/pros" })} className="w-full">
+              Browse pros
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <PlanCard
+                plan="Monthly"
+                price="$9.99"
+                cadence="/ month"
+                badge="7-day free trial"
+                onClick={() => setSelected("premium_monthly")}
+                disabled={!isPaymentsConfigured() || loading || !userId}
+              />
+              <PlanCard
+                plan="Annual"
+                price="$79"
+                cadence="/ year"
+                badge="Save 34%"
+                highlight
+                onClick={() => setSelected("premium_yearly")}
+                disabled={!isPaymentsConfigured() || loading || !userId}
+              />
+            </div>
+            {!userId && !loading && (
+              <p className="text-center text-xs text-muted-foreground">
+                <Link to="/auth" className="text-primary hover:underline">
+                  Sign in
+                </Link>{" "}
+                to subscribe.
+              </p>
+            )}
+          </>
+        )}
       </main>
     </>
   );
@@ -66,16 +150,23 @@ function PlanCard({
   cadence,
   badge,
   highlight,
+  onClick,
+  disabled,
 }: {
   plan: string;
   price: string;
   cadence: string;
   badge: string;
   highlight?: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <div
-      className={`rounded-2xl border p-4 shadow-soft ${
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`text-left rounded-2xl border p-4 shadow-soft transition hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed ${
         highlight ? "border-primary bg-primary/5" : "border-border bg-card"
       }`}
     >
@@ -93,6 +184,6 @@ function PlanCard({
         <span className="font-display text-2xl font-bold">{price}</span>
         <span className="text-xs text-muted-foreground">{cadence}</span>
       </div>
-    </div>
+    </button>
   );
 }

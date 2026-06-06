@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/AppHeader";
 import { Input } from "@/components/ui/input";
 import { PRO_CATEGORIES, PRO_CATEGORY_MAP, FREE_PER_CATEGORY } from "@/lib/pro-categories";
+import { usePremium } from "@/hooks/usePremium";
 
 export const Route = createFileRoute("/_app/pros")({
   component: ProsDirectoryPage,
@@ -29,7 +30,7 @@ function ProsDirectoryPage() {
   const [loaded, setLoaded] = useState(false);
 
   // Premium gating wires up in Phase 2. For now everyone is free-tier.
-  const isPremium = false;
+  const { isPremium } = usePremium();
 
   useEffect(() => {
     supabase
