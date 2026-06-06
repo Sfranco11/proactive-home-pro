@@ -29,7 +29,7 @@ function ProsDirectoryPage() {
   const [loaded, setLoaded] = useState(false);
 
   // Premium gating wires up in Phase 2. For now everyone is free-tier.
-  const isPremium = false;
+  const { isPremium } = usePremium();
 
   useEffect(() => {
     supabase
