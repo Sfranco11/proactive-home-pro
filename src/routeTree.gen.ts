@@ -25,6 +25,7 @@ import { Route as AppHomeRouteImport } from './routes/_app.home'
 import { Route as AppCalendarRouteImport } from './routes/_app.calendar'
 import { Route as AppBookingsRouteImport } from './routes/_app.bookings'
 import { Route as AppProsIdRouteImport } from './routes/_app.pros.$id'
+import { Route as AppBookingsIdRouteImport } from './routes/_app.bookings.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicBookingsTokenRouteImport } from './routes/api/public/bookings.$token'
 
@@ -107,6 +108,11 @@ const AppProsIdRoute = AppProsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AppProsRoute,
 } as any)
+const AppBookingsIdRoute = AppBookingsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppBookingsRoute,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -123,7 +129,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
-  '/bookings': typeof AppBookingsRoute
+  '/bookings': typeof AppBookingsRouteWithChildren
   '/calendar': typeof AppCalendarRoute
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
   '/r/$code': typeof RCodeRoute
+  '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
   '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -142,7 +149,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
-  '/bookings': typeof AppBookingsRoute
+  '/bookings': typeof AppBookingsRouteWithChildren
   '/calendar': typeof AppCalendarRoute
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
   '/r/$code': typeof RCodeRoute
+  '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
   '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -163,7 +171,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
-  '/_app/bookings': typeof AppBookingsRoute
+  '/_app/bookings': typeof AppBookingsRouteWithChildren
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/logs': typeof AppLogsRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/_app/triage': typeof AppTriageRoute
   '/_app/upgrade': typeof AppUpgradeRoute
   '/r/$code': typeof RCodeRoute
+  '/_app/bookings/$id': typeof AppBookingsIdRoute
   '/_app/pros/$id': typeof AppProsIdRoute
   '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/triage'
     | '/upgrade'
     | '/r/$code'
+    | '/bookings/$id'
     | '/pros/$id'
     | '/api/public/bookings/$token'
     | '/api/public/payments/webhook'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/triage'
     | '/upgrade'
     | '/r/$code'
+    | '/bookings/$id'
     | '/pros/$id'
     | '/api/public/bookings/$token'
     | '/api/public/payments/webhook'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/_app/triage'
     | '/_app/upgrade'
     | '/r/$code'
+    | '/_app/bookings/$id'
     | '/_app/pros/$id'
     | '/api/public/bookings/$token'
     | '/api/public/payments/webhook'
@@ -363,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProsIdRouteImport
       parentRoute: typeof AppProsRoute
     }
+    '/_app/bookings/$id': {
+      id: '/_app/bookings/$id'
+      path: '/$id'
+      fullPath: '/bookings/$id'
+      preLoaderRoute: typeof AppBookingsIdRouteImport
+      parentRoute: typeof AppBookingsRoute
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -380,6 +399,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppBookingsRouteChildren {
+  AppBookingsIdRoute: typeof AppBookingsIdRoute
+}
+
+const AppBookingsRouteChildren: AppBookingsRouteChildren = {
+  AppBookingsIdRoute: AppBookingsIdRoute,
+}
+
+const AppBookingsRouteWithChildren = AppBookingsRoute._addFileChildren(
+  AppBookingsRouteChildren,
+)
+
 interface AppProsRouteChildren {
   AppProsIdRoute: typeof AppProsIdRoute
 }
@@ -392,7 +423,7 @@ const AppProsRouteWithChildren =
   AppProsRoute._addFileChildren(AppProsRouteChildren)
 
 interface AppRouteChildren {
-  AppBookingsRoute: typeof AppBookingsRoute
+  AppBookingsRoute: typeof AppBookingsRouteWithChildren
   AppCalendarRoute: typeof AppCalendarRoute
   AppHomeRoute: typeof AppHomeRoute
   AppLogsRoute: typeof AppLogsRoute
@@ -405,7 +436,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppBookingsRoute: AppBookingsRoute,
+  AppBookingsRoute: AppBookingsRouteWithChildren,
   AppCalendarRoute: AppCalendarRoute,
   AppHomeRoute: AppHomeRoute,
   AppLogsRoute: AppLogsRoute,
