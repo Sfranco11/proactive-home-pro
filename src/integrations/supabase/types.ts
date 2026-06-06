@@ -298,6 +298,66 @@ export type Database = {
           },
         ]
       }
+      service_providers: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          description: string | null
+          email: string | null
+          google_place_id: string | null
+          id: string
+          is_premium_only: boolean
+          name: string
+          phone: string | null
+          photo_urls: string[]
+          rating: number | null
+          review_count: number
+          service_area: string | null
+          sort_rank: number
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          google_place_id?: string | null
+          id?: string
+          is_premium_only?: boolean
+          name: string
+          phone?: string | null
+          photo_urls?: string[]
+          rating?: number | null
+          review_count?: number
+          service_area?: string | null
+          sort_rank?: number
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          google_place_id?: string | null
+          id?: string
+          is_premium_only?: boolean
+          name?: string
+          phone?: string | null
+          photo_urls?: string[]
+          rating?: number | null
+          review_count?: number
+          service_area?: string | null
+          sort_rank?: number
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       triage_requests: {
         Row: {
           category: string
