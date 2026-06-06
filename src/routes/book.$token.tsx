@@ -27,14 +27,13 @@ interface Loaded {
     id: string;
     status: string;
     category: string;
-    service_type: string;
+    is_recurring: boolean;
     scheduled_at: string | null;
-    price: number | null;
-    eta_minutes: number | null;
+    final_cost: number | null;
     notes: string | null;
   };
   provider: { name: string; category: string } | null;
-  events: { kind: string; status: string | null; message: string | null; created_at: string }[];
+  events: { event_type: string; payload: Record<string, unknown> | null; created_at: string }[];
 }
 
 function ProUpdatePage() {
@@ -68,14 +67,13 @@ function ProUpdatePage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!status && !eta && !price && !message) {
+    if (!status && !price && !message) {
       toast.error("Enter at least one update");
       return;
     }
     setBusy(true);
     const body: Record<string, unknown> = {};
     if (status) body.status = status;
-    if (eta) body.eta_minutes = Number(eta);
     if (price) body.price = Number(price);
     if (message) body.message = message;
     const res = await fetch(`/api/public/bookings/${token}`, {
@@ -174,12 +172,7 @@ function ProUpdatePage() {
             {data.events.length === 0 && <li className="text-xs text-muted-foreground">No activity yet.</li>}
             {data.events.map((ev, i) => (
               <li key={i} className="flex justify-between gap-3 border-b border-border/60 py-1.5 last:border-b-0">
-                <span>
-                  {ev.kind === "status_change" && <span className="font-medium capitalize">{ev.status?.replace(/_/g, " ")}</span>}
-                  {ev.kind === "eta_update" && <span>{ev.message}</span>}
-                  {ev.kind === "note" && <span>{ev.message}</span>}
-                  {ev.kind === "photo" && <span className="text-muted-foreground">Photo added</span>}
-                </span>
+                <span className="font-medium capitalize">{ev.event_type.replace(/[:_]/g, " ")}</span>
                 <span className="text-xs text-muted-foreground">{new Date(ev.created_at).toLocaleString()}</span>
               </li>
             ))}
