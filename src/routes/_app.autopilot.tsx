@@ -22,7 +22,7 @@ interface Schedule {
   next_run_at: string;
   active: boolean;
   notes: string | null;
-  preferred_provider_id: string | null;
+  preferred_partner_id: string | null;
   provider: { name: string } | null;
 }
 
@@ -36,8 +36,8 @@ function AutopilotPage() {
     if (!user) return;
     (supabase as any)
       .from("autopilot_schedules")
-      .select("id, category, cadence, next_run_at, active, notes, preferred_provider_id, provider:service_providers!preferred_provider_id(name)")
-      .eq("homeowner_id", user.id)
+      .select("id, category, cadence, next_run_at, active, notes, preferred_partner_id, provider:service_providers!preferred_partner_id(name)")
+      .eq("owner_id", user.id)
       .order("next_run_at", { ascending: true })
       .then(({ data }: any) => setRows(data ?? []));
   };
