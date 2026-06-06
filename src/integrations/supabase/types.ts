@@ -462,6 +462,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_realtor_brand: {
+        Args: { _code: string }
+        Returns: {
+          brand_color: string
+          company_name: string
+          logo_url: string
+        }[]
+      }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
