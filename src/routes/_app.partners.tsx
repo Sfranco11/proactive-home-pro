@@ -38,7 +38,7 @@ function PartnersPage() {
           .select("*")
           .eq("realtor_id", h.realtor_id)
           .order("category");
-        setPartners((ps as Partner[]) ?? []);
+        setPartners(((ps as unknown) as Partner[]) ?? []);
       }
       setLoaded(true);
     })();
