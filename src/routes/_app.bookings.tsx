@@ -36,10 +36,12 @@ const STATUS_TONE: Record<string, string> = {
 interface Row {
   id: string;
   category: string;
+  title: string | null;
   status: string;
   scheduled_at: string | null;
   created_at: string;
-  provider: { name: string } | null;
+  provider_id: string | null;
+  provider?: { name: string } | null;
 }
 
 function BookingsList() {
@@ -48,13 +50,28 @@ function BookingsList() {
 
   useEffect(() => {
     if (!user) return;
-    const fetchRows = () =>
-      (supabase as any)
+    const fetchRows = async () => {
+      const { data, error } = await (supabase as any)
         .from("bookings")
-        .select("id, category, status, scheduled_at, created_at, provider:service_providers(name)")
+        .select("id, category, title, status, scheduled_at, created_at, provider_id")
         .eq("owner_id", user.id)
-        .order("created_at", { ascending: false })
-        .then(({ data }: any) => setRows(data ?? []));
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.error("bookings list error", error);
+        setRows([]);
+        return;
+      }
+      const providerIds = Array.from(new Set((data ?? []).map((r: any) => r.provider_id).filter(Boolean)));
+      let providerMap: Record<string, string> = {};
+      if (providerIds.length) {
+        const { data: provs } = await (supabase as any)
+          .from("service_providers")
+          .select("id, name")
+          .in("id", providerIds);
+        providerMap = Object.fromEntries((provs ?? []).map((p: any) => [p.id, p.name]));
+      }
+      setRows((data ?? []).map((r: any) => ({ ...r, provider: r.provider_id ? { name: providerMap[r.provider_id] ?? "Provider" } : null })));
+    };
     fetchRows();
 
     const channel = supabase
@@ -69,6 +86,7 @@ function BookingsList() {
       supabase.removeChannel(channel);
     };
   }, [user]);
+
 
   return (
     <>
