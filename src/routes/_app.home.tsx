@@ -238,6 +238,7 @@ function HomeDashboard() {
         {/* Quick links */}
         <section className="grid grid-cols-2 gap-3">
           {[
+            { to: "/equipment", i: Activity, t: "My equipment", d: "Track age & service" },
             { to: "/systems", i: BookOpen, t: "Systems guide", d: "Shutoffs & lifespans" },
             { to: "/partners", i: Users, t: "Your pros", d: "Vetted partners" },
           ].map((q) => (
