@@ -114,7 +114,7 @@ function BookingDetail() {
     setDraft("");
     const { error } = await (supabase as any)
       .from("booking_messages")
-      .insert({ booking_id: id, sender: "homeowner", body });
+      .insert({ booking_id: id, sender_id: user?.id, sender_role: "homeowner", body });
     if (error) toast.error(error.message);
   };
 
