@@ -66,23 +66,32 @@ function BookingDetail() {
     (supabase as any)
       .from("bookings")
       .select(
-        "id, status, category, scheduled_at, price, eta_minutes, notes, pro_token, provider:service_providers(name, phone, email)",
+        "id, status, category, scheduled_at, final_cost, estimated_cost, notes, public_token, provider:service_providers(name, phone, email)",
       )
       .eq("id", id)
       .maybeSingle()
       .then(({ data }: any) => setBooking(data));
     (supabase as any)
       .from("booking_events")
-      .select("id, kind, status, message, photo_url, created_at")
+      .select("id, event_type, payload, created_at")
       .eq("booking_id", id)
       .order("created_at", { ascending: true })
-      .then(({ data }: any) => setEvents(data ?? []));
+      .then(({ data }: any) => setEvents((data ?? []).map((e: any) => ({
+        id: e.id,
+        kind: e.event_type?.startsWith("photo") ? "photo" : e.event_type,
+        status: null,
+        message: e.payload?.message ?? null,
+        photo_url: e.payload?.photo_url ?? null,
+        created_at: e.created_at,
+      }))));
     (supabase as any)
       .from("booking_messages")
-      .select("id, sender, body, created_at")
+      .select("id, sender_role, body, created_at")
       .eq("booking_id", id)
       .order("created_at", { ascending: true })
-      .then(({ data }: any) => setMessages(data ?? []));
+      .then(({ data }: any) => setMessages((data ?? []).map((m: any) => ({
+        id: m.id, sender: m.sender_role, body: m.body, created_at: m.created_at,
+      }))));
   };
 
   useEffect(() => {
