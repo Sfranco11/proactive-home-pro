@@ -185,11 +185,6 @@ function BookingDetail() {
                     {i + 1}
                   </span>
                   <span className={`text-sm ${done ? "font-medium" : "text-muted-foreground"}`}>{step.label}</span>
-                  {active && booking.eta_minutes != null && (
-                    <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      ETA {booking.eta_minutes}m
-                    </span>
-                  )}
                 </li>
               );
             })}
