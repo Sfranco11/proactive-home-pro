@@ -1,6 +1,6 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Plus, Trash2, Pencil, Users, Tag, DollarSign, Building2 } from "lucide-react";
+import { Copy, Plus, Trash2, Pencil, Users, Tag, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AppHeader } from "@/components/AppHeader";
@@ -127,14 +127,36 @@ function RealtorPage() {
             </TabsList>
 
             <TabsContent value="overview" className="mt-5 space-y-4">
-              <div className="rounded-2xl bg-hero p-1 shadow-glow">
-                <div className="rounded-[18px] bg-card p-5">
-                  <div className="text-xs uppercase tracking-widest text-primary">Your invite code</div>
-                  <div className="mt-1 flex items-center gap-3">
-                    <span className="font-display text-3xl font-bold tracking-wider">{realtor?.referral_code}</span>
+              {/* Hero KPI */}
+              <div className="overflow-hidden rounded-3xl bg-hero p-5 text-primary-foreground shadow-glow">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-widest text-primary-foreground/70">
+                      Fees paid · all time
+                    </div>
+                    <div className="mt-1 font-display text-4xl font-bold tracking-tight">
+                      ${totals.paid.toFixed(0)}
+                    </div>
+                    <div className="mt-1 text-xs text-primary-foreground/75">
+                      {totals.total} referrals · {totals.pending} pending payout
+                    </div>
+                  </div>
+                  <div className="rounded-2xl bg-gold/15 px-3 py-1.5 text-xs font-semibold text-gold">
+                    {clientCount} {clientCount === 1 ? "client" : "clients"}
+                  </div>
+                </div>
+                <div className="mt-4 rounded-2xl bg-white/10 p-3 backdrop-blur">
+                  <div className="text-[10px] font-semibold uppercase tracking-widest text-primary-foreground/70">
+                    Your invite code
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="font-display text-2xl font-bold tracking-[0.25em]">
+                      {realtor?.referral_code}
+                    </span>
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="ghost"
+                      className="text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
                       onClick={() => {
                         navigator.clipboard.writeText(realtor?.referral_code ?? "");
                         toast.success("Code copied");
@@ -145,6 +167,7 @@ function RealtorPage() {
                     <Button
                       size="sm"
                       variant="ghost"
+                      className="text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
                       onClick={() => {
                         const url = `${window.location.origin}/r/${realtor?.referral_code}`;
                         navigator.clipboard.writeText(url);
@@ -154,17 +177,15 @@ function RealtorPage() {
                       Copy link
                     </Button>
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Share at closing or via post-closing email. Homeowners who use this code link to you forever.
-                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <Stat icon={Users} label="Clients" value={clientCount} />
                 <Stat icon={Tag} label="Referrals" value={totals.total} />
-                <Stat icon={DollarSign} label="Fees paid" value={`$${totals.paid.toFixed(0)}`} />
+                <Stat icon={Building2} label="Partners" value={partners.length} />
               </div>
+
 
               <div className="rounded-2xl border border-border bg-card p-5">
                 <h3 className="font-display font-semibold">Recent referrals</h3>
