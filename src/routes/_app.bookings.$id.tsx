@@ -29,10 +29,10 @@ interface Booking {
   status: string;
   category: string;
   scheduled_at: string | null;
-  price: number | null;
-  eta_minutes: number | null;
+  final_cost: number | null;
+  estimated_cost: number | null;
   notes: string | null;
-  pro_token: string;
+  public_token: string | null;
   provider: { name: string; phone: string | null; email: string | null } | null;
 }
 interface Event {
