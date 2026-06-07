@@ -473,6 +473,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "maintenance_logs_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners_homeowner_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       partners: {
@@ -709,6 +716,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "referrals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners_homeowner_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "referrals_realtor_id_fkey"
             columns: ["realtor_id"]
             isOneToOne: false
@@ -896,11 +910,61 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "triage_requests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners_homeowner_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      partners_homeowner_safe: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          hours: string | null
+          id: string | null
+          name: string | null
+          phone: string | null
+          realtor_id: string | null
+          response_time: string | null
+          service_area: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          hours?: string | null
+          id?: string | null
+          name?: string | null
+          phone?: string | null
+          realtor_id?: string | null
+          response_time?: string | null
+          service_area?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          hours?: string | null
+          id?: string | null
+          name?: string | null
+          phone?: string | null
+          realtor_id?: string | null
+          response_time?: string | null
+          service_area?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_realtor_id_fkey"
+            columns: ["realtor_id"]
+            isOneToOne: false
+            referencedRelation: "realtors"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_member_tier: { Args: { _price_id: string }; Returns: string }

@@ -60,7 +60,7 @@ function ProsDirectoryPage() {
         const { data: home } = await supabase.from("homes").select("realtor_id").eq("owner_id", user.id).maybeSingle();
         if (home?.realtor_id) {
           const { data: partners } = await supabase
-            .from("partners").select("name").eq("realtor_id", home.realtor_id);
+            .from("partners_homeowner_safe" as any).select("name").eq("realtor_id", home.realtor_id);
           const partnerNames = new Set((partners ?? []).map((p: any) => p.name.toLowerCase()));
           preferred = new Set((data ?? []).filter((p: any) => partnerNames.has(p.name.toLowerCase())).map((p: any) => p.id));
         }
