@@ -35,10 +35,8 @@ function HomeDashboard() {
         .eq("owner_id", user.id)
         .maybeSingle();
       if (home?.realtor_id) {
-        const { data: r } = await supabase
-          .from("realtors")
-          .select("company_name, brand_color")
-          .eq("user_id", home.realtor_id)
+        const { data: r } = await (supabase as any)
+          .rpc("get_realtor_brand_by_id", { _user_id: home.realtor_id })
           .maybeSingle();
         if (r) setRealtor(r as Realtor);
       }
