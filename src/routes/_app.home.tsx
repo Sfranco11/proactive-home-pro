@@ -51,8 +51,20 @@ function HomeDashboard() {
         .gte("completed_at", since.toISOString());
       setLogsCount(count ?? 0);
       setCompletedKeys(new Set((logs ?? []).map((l: any) => l.task_key).filter(Boolean)));
+
+      const { data: eq } = await supabase
+        .from("home_equipment" as any)
+        .select("*")
+        .eq("owner_id", user.id);
+      setEquipment((eq as any) ?? []);
     })();
   }, [user]);
+
+  const equipmentAlerts = equipment
+    .map((e) => ({ eq: e, health: computeHealth(e) }))
+    .filter((x) => x.health.tone === "due" || x.health.tone === "overdue" || x.health.tone === "warn")
+    .sort((a, b) => a.health.pctRemaining - b.health.pctRemaining)
+    .slice(0, 3);
 
   return (
     <>
