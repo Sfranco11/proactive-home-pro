@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cancelBooking } from "@/lib/bookings.functions";
+import { PayBookingButton } from "@/components/PayBookingButton";
 
 export const Route = createFileRoute("/_app/bookings/$id")({
   component: BookingDetail,
