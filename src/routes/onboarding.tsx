@@ -68,12 +68,9 @@ function Onboarding() {
 
     let realtor_id: string | null = null;
     if (parsed.data.referral_code) {
-      const { data: r } = await supabase
-        .from("realtors")
-        .select("user_id")
-        .eq("referral_code", parsed.data.referral_code.trim().toUpperCase())
-        .maybeSingle();
-      if (r?.user_id) realtor_id = r.user_id;
+      const { data: rid } = await (supabase as any)
+        .rpc("resolve_realtor_by_code", { _code: parsed.data.referral_code.trim() });
+      if (rid) realtor_id = rid as string;
       else toast.warning("Referral code not found — saving without realtor link.");
     }
 
