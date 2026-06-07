@@ -367,6 +367,51 @@ export type Database = {
           },
         ]
       }
+      loyalty_credits: {
+        Row: {
+          amount_cents: number
+          currency: string
+          environment: string
+          expires_at: string | null
+          granted_at: string
+          id: string
+          member_year: number
+          owner_id: string
+          redeemed_at: string | null
+          redeemed_booking_id: string | null
+          status: string
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          currency?: string
+          environment?: string
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          member_year: number
+          owner_id: string
+          redeemed_at?: string | null
+          redeemed_booking_id?: string | null
+          status?: string
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          currency?: string
+          environment?: string
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          member_year?: number
+          owner_id?: string
+          redeemed_at?: string | null
+          redeemed_booking_id?: string | null
+          status?: string
+          stripe_subscription_id?: string | null
+        }
+        Relationships: []
+      }
       maintenance_logs: {
         Row: {
           completed_at: string
@@ -510,6 +555,51 @@ export type Database = {
           role?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      realtor_bounties: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          environment: string
+          homeowner_id: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          realtor_id: string
+          status: string
+          stripe_subscription_id: string | null
+          tier: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          environment?: string
+          homeowner_id: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          realtor_id: string
+          status?: string
+          stripe_subscription_id?: string | null
+          tier: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          environment?: string
+          homeowner_id?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          realtor_id?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          tier?: string
         }
         Relationships: []
       }
@@ -813,6 +903,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_member_tier: { Args: { _price_id: string }; Returns: string }
       get_realtor_brand: {
         Args: { _code: string }
         Returns: {
