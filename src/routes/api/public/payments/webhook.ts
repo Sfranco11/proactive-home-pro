@@ -81,6 +81,61 @@ async function handleSubscriptionDeleted(subscription: any, env: StripeEnv) {
     .eq('environment', env);
 }
 
+async function handleCheckoutSessionCompleted(session: any, env: StripeEnv) {
+  const bookingId = session.metadata?.bookingId;
+  const kind = session.metadata?.kind;
+  if (kind !== 'booking' || !bookingId) return; // only handle booking checkouts here
+
+  const sb = getSupabase();
+
+  const { data: booking } = await sb
+    .from('bookings')
+    .select('id, owner_id, realtor_id')
+    .eq('id', bookingId)
+    .maybeSingle();
+  if (!booking) {
+    console.error('Webhook: booking not found for completed session', bookingId);
+    return;
+  }
+
+  const amountCents = session.amount_total ?? 0;
+  const amount = amountCents / 100;
+  const currency = (session.currency ?? 'usd').toUpperCase();
+
+  await sb.from('invoices').insert({
+    booking_id: bookingId,
+    owner_id: booking.owner_id,
+    realtor_id: booking.realtor_id,
+    amount,
+    currency,
+    status: 'paid',
+    paid_at: new Date().toISOString(),
+    pdf_url: session.invoice ?? null,
+  });
+
+  await sb
+    .from('bookings')
+    .update({
+      final_cost: amount,
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', bookingId);
+
+  await sb.from('booking_events').insert({
+    booking_id: bookingId,
+    event_type: 'payment:completed',
+    payload: {
+      source: 'stripe_webhook',
+      session_id: session.id,
+      amount,
+      currency,
+      payment_method: session.payment_method_types ?? null,
+    },
+  });
+}
+
 async function handleWebhook(req: Request, env: StripeEnv) {
   const event = await verifyWebhook(req, env);
 
@@ -93,6 +148,9 @@ async function handleWebhook(req: Request, env: StripeEnv) {
       break;
     case 'customer.subscription.deleted':
       await handleSubscriptionDeleted(event.data.object, env);
+      break;
+    case 'checkout.session.completed':
+      await handleCheckoutSessionCompleted(event.data.object, env);
       break;
     default:
       console.log('Unhandled event:', event.type);

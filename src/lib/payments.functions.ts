@@ -112,3 +112,89 @@ export const createPortalSession = createServerFn({ method: 'POST' })
       return { error: getStripeErrorMessage(error) };
     }
   });
+
+// ---------- Booking checkout (one-off, dynamic amount) ----------
+
+const FINANCING_THRESHOLD_CENTS = 100_000; // $1,000
+
+type BookingCheckoutResult =
+  | { clientSecret: string; amountCents: number; financingAvailable: boolean }
+  | { error: string };
+
+export const createBookingCheckoutSession = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { bookingId: string; returnUrl: string; environment: StripeEnv }) => {
+    if (!/^[0-9a-f-]{36}$/i.test(data.bookingId)) throw new Error('Invalid bookingId');
+    return data;
+  })
+  .handler(async ({ data, context }): Promise<BookingCheckoutResult> => {
+    try {
+      const sb = context.supabase as any;
+      const { data: booking, error: bookingErr } = await sb
+        .from('bookings')
+        .select('id, owner_id, title, category, final_cost, estimated_cost, status, provider:service_providers(name)')
+        .eq('id', data.bookingId)
+        .eq('owner_id', context.userId)
+        .maybeSingle();
+      if (bookingErr) throw new Error(bookingErr.message);
+      if (!booking) throw new Error('Booking not found');
+
+      const amount = Number(booking.final_cost ?? booking.estimated_cost ?? 0);
+      if (!amount || amount <= 0) {
+        throw new Error('Your pro hasn\'t set the price yet. They\'ll send an amount before payment.');
+      }
+      const amountCents = Math.round(amount * 100);
+      if (amountCents < 50) throw new Error('Amount must be at least $0.50');
+
+      // Resolve a Stripe customer keyed on Supabase user id (searchable later)
+      const { data: claims } = (context as any).claims
+        ? { data: (context as any).claims }
+        : { data: null };
+      const email: string | undefined = claims?.email;
+
+      const stripe = createStripeClient(data.environment);
+      const customerId = await resolveOrCreateCustomer(stripe, {
+        email,
+        userId: context.userId,
+      });
+
+      const financingAvailable = amountCents >= FINANCING_THRESHOLD_CENTS;
+      const paymentMethodTypes: string[] = ['card'];
+      if (financingAvailable) {
+        paymentMethodTypes.push('klarna', 'afterpay_clearpay', 'affirm');
+      }
+
+      const productName = `${booking.title || booking.category} · ${booking.provider?.name ?? 'Service'}`;
+
+      const session = await stripe.checkout.sessions.create({
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: { name: productName },
+            unit_amount: amountCents,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        ui_mode: 'embedded_page',
+        return_url: data.returnUrl,
+        customer: customerId,
+        payment_method_types: paymentMethodTypes as any,
+        payment_intent_data: { description: productName },
+        metadata: {
+          userId: context.userId,
+          bookingId: booking.id,
+          kind: 'booking',
+        },
+      });
+
+      return {
+        clientSecret: session.client_secret ?? '',
+        amountCents,
+        financingAvailable,
+      };
+    } catch (error) {
+      return { error: getStripeErrorMessage(error) };
+    }
+  });
+

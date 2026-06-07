@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cancelBooking } from "@/lib/bookings.functions";
+import { PayBookingButton } from "@/components/PayBookingButton";
 
 export const Route = createFileRoute("/_app/bookings/$id")({
   component: BookingDetail,
@@ -28,10 +29,10 @@ interface Booking {
   status: string;
   category: string;
   scheduled_at: string | null;
-  price: number | null;
-  eta_minutes: number | null;
+  final_cost: number | null;
+  estimated_cost: number | null;
   notes: string | null;
-  pro_token: string;
+  public_token: string | null;
   provider: { name: string; phone: string | null; email: string | null } | null;
 }
 interface Event {
@@ -65,23 +66,32 @@ function BookingDetail() {
     (supabase as any)
       .from("bookings")
       .select(
-        "id, status, category, scheduled_at, price, eta_minutes, notes, pro_token, provider:service_providers(name, phone, email)",
+        "id, status, category, scheduled_at, final_cost, estimated_cost, notes, public_token, provider:service_providers(name, phone, email)",
       )
       .eq("id", id)
       .maybeSingle()
       .then(({ data }: any) => setBooking(data));
     (supabase as any)
       .from("booking_events")
-      .select("id, kind, status, message, photo_url, created_at")
+      .select("id, event_type, payload, created_at")
       .eq("booking_id", id)
       .order("created_at", { ascending: true })
-      .then(({ data }: any) => setEvents(data ?? []));
+      .then(({ data }: any) => setEvents((data ?? []).map((e: any) => ({
+        id: e.id,
+        kind: e.event_type?.startsWith("photo") ? "photo" : e.event_type,
+        status: null,
+        message: e.payload?.message ?? null,
+        photo_url: e.payload?.photo_url ?? null,
+        created_at: e.created_at,
+      }))));
     (supabase as any)
       .from("booking_messages")
-      .select("id, sender, body, created_at")
+      .select("id, sender_role, body, created_at")
       .eq("booking_id", id)
       .order("created_at", { ascending: true })
-      .then(({ data }: any) => setMessages(data ?? []));
+      .then(({ data }: any) => setMessages((data ?? []).map((m: any) => ({
+        id: m.id, sender: m.sender_role, body: m.body, created_at: m.created_at,
+      }))));
   };
 
   useEffect(() => {
@@ -104,7 +114,7 @@ function BookingDetail() {
     setDraft("");
     const { error } = await (supabase as any)
       .from("booking_messages")
-      .insert({ booking_id: id, sender: "homeowner", body });
+      .insert({ booking_id: id, sender_id: user?.id, sender_role: "homeowner", body });
     if (error) toast.error(error.message);
   };
 
@@ -144,7 +154,8 @@ function BookingDetail() {
 
   const currentIdx = TIMELINE.findIndex((s) => s.key === booking.status);
   const isTerminal = booking.status === "completed" || booking.status === "cancelled";
-  const proLink = `${typeof window !== "undefined" ? window.location.origin : ""}/book/${booking.pro_token}`;
+  const proLink = `${typeof window !== "undefined" ? window.location.origin : ""}/book/${booking.public_token ?? ""}`;
+  const payableAmount = Number(booking.final_cost ?? booking.estimated_cost ?? 0);
 
   return (
     <>
@@ -174,11 +185,6 @@ function BookingDetail() {
                     {i + 1}
                   </span>
                   <span className={`text-sm ${done ? "font-medium" : "text-muted-foreground"}`}>{step.label}</span>
-                  {active && booking.eta_minutes != null && (
-                    <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      ETA {booking.eta_minutes}m
-                    </span>
-                  )}
                 </li>
               );
             })}
@@ -200,8 +206,8 @@ function BookingDetail() {
           {booking.scheduled_at && (
             <p><span className="text-muted-foreground">Scheduled: </span>{new Date(booking.scheduled_at).toLocaleString()}</p>
           )}
-          {booking.price != null && (
-            <p><span className="text-muted-foreground">Price: </span>${Number(booking.price).toFixed(2)}</p>
+          {payableAmount > 0 && (
+            <p><span className="text-muted-foreground">Price: </span>${payableAmount.toFixed(2)}{booking.final_cost == null && <span className="ml-1 text-xs text-muted-foreground">(estimate)</span>}</p>
           )}
           {booking.notes && (
             <p><span className="text-muted-foreground">Notes: </span>{booking.notes}</p>
@@ -291,6 +297,9 @@ function BookingDetail() {
           </Button>
         </section>
 
+        {/* Payment */}
+        {!isTerminal && payableAmount > 0 && <PayBookingSection bookingId={id} amount={payableAmount} />}
+
         {/* Invoices / receipts */}
         <Invoices bookingId={id} />
 
@@ -304,22 +313,37 @@ function BookingDetail() {
   );
 }
 
-interface InvoiceRow { id: string; amount: number; tax: number; status: string; file_url: string | null; issued_at: string; }
+interface InvoiceRow { id: string; amount: number; status: string; pdf_url: string | null; paid_at: string | null; created_at: string; currency: string; }
+
+function PayBookingSection({ bookingId, amount }: { bookingId: string; amount: number }) {
+  const [paid, setPaid] = useState<boolean | null>(null);
+  useEffect(() => {
+    (supabase as any)
+      .from("invoices")
+      .select("id")
+      .eq("booking_id", bookingId)
+      .eq("status", "paid")
+      .limit(1)
+      .then(({ data }: any) => setPaid((data ?? []).length > 0));
+  }, [bookingId]);
+  if (paid) return null;
+  return <PayBookingButton bookingId={bookingId} amount={amount} />;
+}
 
 function Invoices({ bookingId }: { bookingId: string }) {
   const [rows, setRows] = useState<InvoiceRow[]>([]);
   useEffect(() => {
     (supabase as any)
       .from("invoices")
-      .select("id, amount, tax, status, file_url, issued_at")
+      .select("id, amount, status, pdf_url, paid_at, created_at, currency")
       .eq("booking_id", bookingId)
-      .order("issued_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .then(({ data }: any) => setRows(data ?? []));
   }, [bookingId]);
   if (rows.length === 0) {
     return (
       <section className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-        No invoices yet. Your pro will send one when the job is complete.
+        No invoices yet. Pay above to generate a receipt.
       </section>
     );
   }
@@ -330,11 +354,13 @@ function Invoices({ bookingId }: { bookingId: string }) {
         {rows.map((r) => (
           <li key={r.id} className="flex items-center justify-between rounded-xl bg-muted/30 p-3 text-sm">
             <div>
-              <div className="font-medium">${Number(r.amount).toFixed(2)}{r.tax ? ` + $${Number(r.tax).toFixed(2)} tax` : ""}</div>
-              <div className="text-[11px] text-muted-foreground">{new Date(r.issued_at).toLocaleDateString()} · {r.status}</div>
+              <div className="font-medium">${Number(r.amount).toFixed(2)} {r.currency}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {new Date(r.paid_at ?? r.created_at).toLocaleDateString()} · {r.status}
+              </div>
             </div>
-            {r.file_url && (
-              <a href={r.file_url} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline">
+            {r.pdf_url && (
+              <a href={r.pdf_url} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline">
                 View
               </a>
             )}
