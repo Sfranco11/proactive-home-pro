@@ -206,8 +206,8 @@ function BookingDetail() {
           {booking.scheduled_at && (
             <p><span className="text-muted-foreground">Scheduled: </span>{new Date(booking.scheduled_at).toLocaleString()}</p>
           )}
-          {booking.price != null && (
-            <p><span className="text-muted-foreground">Price: </span>${Number(booking.price).toFixed(2)}</p>
+          {payableAmount > 0 && (
+            <p><span className="text-muted-foreground">Price: </span>${payableAmount.toFixed(2)}{booking.final_cost == null && <span className="ml-1 text-xs text-muted-foreground">(estimate)</span>}</p>
           )}
           {booking.notes && (
             <p><span className="text-muted-foreground">Notes: </span>{booking.notes}</p>
