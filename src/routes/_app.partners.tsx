@@ -34,7 +34,7 @@ function PartnersPage() {
       const { data: h } = await supabase.from("homes").select("realtor_id").eq("owner_id", user.id).maybeSingle();
       if (h?.realtor_id) {
         const { data: ps } = await supabase
-          .from("partners")
+          .from("partners_homeowner_safe" as any)
           .select("*")
           .eq("realtor_id", h.realtor_id)
           .order("category");
