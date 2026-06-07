@@ -92,10 +92,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: "/__l5e/assets-v1/ec3aad71-ea3f-407b-898c-5ec8ec721e5c/app-icon.png" },
+      { rel: "apple-touch-icon", href: "/__l5e/assets-v1/ec3aad71-ea3f-407b-898c-5ec8ec721e5c/app-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" },
     ],
+
   }),
   shellComponent: RootShell,
   component: RootComponent,
