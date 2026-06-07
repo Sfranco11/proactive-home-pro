@@ -1,6 +1,6 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Plus, Trash2, Pencil, Users, Tag, DollarSign, Building2 } from "lucide-react";
+import { Copy, Plus, Trash2, Pencil, Users, Tag, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AppHeader } from "@/components/AppHeader";
