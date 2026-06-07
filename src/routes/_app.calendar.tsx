@@ -29,7 +29,7 @@ function CalendarPage() {
         setHomeId(h.id);
         if (h.realtor_id) {
           const { data: ps } = await supabase
-            .from("partners")
+            .from("partners_homeowner_safe" as any)
             .select("id, name, category, phone")
             .eq("realtor_id", h.realtor_id);
           setPartners(ps ?? []);
