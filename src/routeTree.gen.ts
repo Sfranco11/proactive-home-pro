@@ -23,6 +23,7 @@ import { Route as AppProsRouteImport } from './routes/_app.pros'
 import { Route as AppPartnersRouteImport } from './routes/_app.partners'
 import { Route as AppLogsRouteImport } from './routes/_app.logs'
 import { Route as AppHomeRouteImport } from './routes/_app.home'
+import { Route as AppEquipmentRouteImport } from './routes/_app.equipment'
 import { Route as AppCalendarRouteImport } from './routes/_app.calendar'
 import { Route as AppBookingsRouteImport } from './routes/_app.bookings'
 import { Route as AppAutopilotRouteImport } from './routes/_app.autopilot'
@@ -102,6 +103,11 @@ const AppHomeRoute = AppHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEquipmentRoute = AppEquipmentRouteImport.update({
+  id: '/equipment',
+  path: '/equipment',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCalendarRoute = AppCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/autopilot': typeof AppAutopilotRoute
   '/bookings': typeof AppBookingsRouteWithChildren
   '/calendar': typeof AppCalendarRoute
+  '/equipment': typeof AppEquipmentRoute
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/autopilot': typeof AppAutopilotRoute
   '/bookings': typeof AppBookingsRouteWithChildren
   '/calendar': typeof AppCalendarRoute
+  '/equipment': typeof AppEquipmentRoute
   '/home': typeof AppHomeRoute
   '/logs': typeof AppLogsRoute
   '/partners': typeof AppPartnersRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/_app/autopilot': typeof AppAutopilotRoute
   '/_app/bookings': typeof AppBookingsRouteWithChildren
   '/_app/calendar': typeof AppCalendarRoute
+  '/_app/equipment': typeof AppEquipmentRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/partners': typeof AppPartnersRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/autopilot'
     | '/bookings'
     | '/calendar'
+    | '/equipment'
     | '/home'
     | '/logs'
     | '/partners'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/autopilot'
     | '/bookings'
     | '/calendar'
+    | '/equipment'
     | '/home'
     | '/logs'
     | '/partners'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/_app/autopilot'
     | '/_app/bookings'
     | '/_app/calendar'
+    | '/_app/equipment'
     | '/_app/home'
     | '/_app/logs'
     | '/_app/partners'
@@ -412,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHomeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/equipment': {
+      id: '/_app/equipment'
+      path: '/equipment'
+      fullPath: '/equipment'
+      preLoaderRoute: typeof AppEquipmentRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/calendar': {
       id: '/_app/calendar'
       path: '/calendar'
@@ -517,6 +536,7 @@ interface AppRouteChildren {
   AppAutopilotRoute: typeof AppAutopilotRoute
   AppBookingsRoute: typeof AppBookingsRouteWithChildren
   AppCalendarRoute: typeof AppCalendarRoute
+  AppEquipmentRoute: typeof AppEquipmentRoute
   AppHomeRoute: typeof AppHomeRoute
   AppLogsRoute: typeof AppLogsRoute
   AppPartnersRoute: typeof AppPartnersRoute
@@ -531,6 +551,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAutopilotRoute: AppAutopilotRoute,
   AppBookingsRoute: AppBookingsRouteWithChildren,
   AppCalendarRoute: AppCalendarRoute,
+  AppEquipmentRoute: AppEquipmentRoute,
   AppHomeRoute: AppHomeRoute,
   AppLogsRoute: AppLogsRoute,
   AppPartnersRoute: AppPartnersRoute,

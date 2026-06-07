@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CalendarCheck, AlertTriangle, BookOpen, Users, ChevronRight, CheckCircle2, Sparkles, Repeat } from "lucide-react";
+import { CalendarCheck, AlertTriangle, BookOpen, Users, ChevronRight, CheckCircle2, Sparkles, Repeat, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { SEASONS, SEASONAL_TASKS, currentSeason } from "@/lib/seasonal-tasks";
+import { computeHealth, getPreset, TONE_CLASS } from "@/lib/equipment";
 
 export const Route = createFileRoute("/_app/home")({
   component: HomeDashboard,
