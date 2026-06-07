@@ -144,11 +144,12 @@ function Landing() {
       </section>
 
       <footer className="border-t border-border">
-        <div className="container-wide flex flex-col items-center justify-between gap-2 py-6 text-xs text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} HomeOwner Pro</span>
-          <span>White-labeled for your realtor</span>
+        <div className="container-wide flex flex-col items-center justify-between gap-3 py-6 text-xs text-muted-foreground sm:flex-row">
+          <img src={logo.url} alt="HomeOwner Pro" width={120} height={32} loading="lazy" className="h-7 w-auto object-contain" />
+          <span>© {new Date().getFullYear()} HomeOwner Pro · White-labeled for your realtor</span>
         </div>
       </footer>
+
     </div>
   );
 }
