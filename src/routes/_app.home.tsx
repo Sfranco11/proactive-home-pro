@@ -22,6 +22,7 @@ function HomeDashboard() {
   const [realtor, setRealtor] = useState<Realtor | null>(null);
   const [logsCount, setLogsCount] = useState(0);
   const [completedKeys, setCompletedKeys] = useState<Set<string>>(new Set());
+  const [equipment, setEquipment] = useState<any[]>([]);
 
   const season = currentSeason();
   const seasonMeta = SEASONS.find((s) => s.key === season)!;
