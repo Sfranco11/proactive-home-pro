@@ -207,6 +207,66 @@ export type Database = {
         }
         Relationships: []
       }
+      home_equipment: {
+        Row: {
+          brand: string | null
+          category: string
+          created_at: string
+          expected_lifespan_months: number | null
+          home_id: string
+          id: string
+          install_date: string | null
+          last_serviced_at: string | null
+          model: string | null
+          name: string
+          notes: string | null
+          owner_id: string
+          partner_category: string | null
+          photo_url: string | null
+          service_interval_months: number | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          category?: string
+          created_at?: string
+          expected_lifespan_months?: number | null
+          home_id: string
+          id?: string
+          install_date?: string | null
+          last_serviced_at?: string | null
+          model?: string | null
+          name: string
+          notes?: string | null
+          owner_id: string
+          partner_category?: string | null
+          photo_url?: string | null
+          service_interval_months?: number | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          category?: string
+          created_at?: string
+          expected_lifespan_months?: number | null
+          home_id?: string
+          id?: string
+          install_date?: string | null
+          last_serviced_at?: string | null
+          model?: string | null
+          name?: string
+          notes?: string | null
+          owner_id?: string
+          partner_category?: string | null
+          photo_url?: string | null
+          service_interval_months?: number | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       homes: {
         Row: {
           address: string | null
