@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CalendarCheck, AlertTriangle, BookOpen, Users, ChevronRight, CheckCircle2, Sparkles, Repeat } from "lucide-react";
+import { CalendarCheck, AlertTriangle, BookOpen, Users, ChevronRight, CheckCircle2, Sparkles, Repeat, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { SEASONS, SEASONAL_TASKS, currentSeason } from "@/lib/seasonal-tasks";
+import { computeHealth, getPreset, TONE_CLASS } from "@/lib/equipment";
 
 export const Route = createFileRoute("/_app/home")({
   component: HomeDashboard,
@@ -21,6 +22,7 @@ function HomeDashboard() {
   const [realtor, setRealtor] = useState<Realtor | null>(null);
   const [logsCount, setLogsCount] = useState(0);
   const [completedKeys, setCompletedKeys] = useState<Set<string>>(new Set());
+  const [equipment, setEquipment] = useState<any[]>([]);
 
   const season = currentSeason();
   const seasonMeta = SEASONS.find((s) => s.key === season)!;
@@ -49,8 +51,20 @@ function HomeDashboard() {
         .gte("completed_at", since.toISOString());
       setLogsCount(count ?? 0);
       setCompletedKeys(new Set((logs ?? []).map((l: any) => l.task_key).filter(Boolean)));
+
+      const { data: eq } = await supabase
+        .from("home_equipment" as any)
+        .select("*")
+        .eq("owner_id", user.id);
+      setEquipment((eq as any) ?? []);
     })();
   }, [user]);
+
+  const equipmentAlerts = equipment
+    .map((e) => ({ eq: e, health: computeHealth(e) }))
+    .filter((x) => x.health.tone === "due" || x.health.tone === "overdue" || x.health.tone === "warn")
+    .sort((a, b) => a.health.pctRemaining - b.health.pctRemaining)
+    .slice(0, 3);
 
   return (
     <>
@@ -113,6 +127,58 @@ function HomeDashboard() {
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </Link>
 
+        {/* Equipment health (Dyson-style) */}
+        <section className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-soft">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              <h2 className="font-display text-base font-semibold">Home health</h2>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/equipment">{equipment.length > 0 ? "Manage" : "Set up"} <ChevronRight className="ml-0.5 h-4 w-4" /></Link>
+            </Button>
+          </div>
+          {equipment.length === 0 ? (
+            <Link to="/equipment" className="block rounded-xl bg-background/60 p-3 text-sm hover:bg-background">
+              <div className="font-medium">Track your equipment</div>
+              <div className="text-[11px] text-muted-foreground">Add your furnace, AC, water heater & filters — see life remaining like a Dyson.</div>
+            </Link>
+          ) : equipmentAlerts.length === 0 ? (
+            <div className="rounded-xl bg-success/10 p-3 text-sm">
+              <div className="font-medium text-success">All {equipment.length} items healthy ✓</div>
+              <div className="text-[11px] text-muted-foreground">Nothing needs attention right now.</div>
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {equipmentAlerts.map(({ eq, health }) => {
+                const preset = getPreset(eq.type);
+                const Icon = preset?.icon ?? Activity;
+                const tone = TONE_CLASS[health.tone];
+                return (
+                  <li key={eq.id}>
+                    <Link to="/equipment" className="block rounded-xl bg-background/60 p-3 hover:bg-background">
+                      <div className="flex items-center gap-3">
+                        <div className={`grid h-9 w-9 place-items-center rounded-lg ${tone.bg} ${tone.text}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between gap-2">
+                            <div className="text-sm font-medium truncate">{eq.name}</div>
+                            <span className={`shrink-0 text-[10px] font-semibold ${tone.text}`}>{health.label}</span>
+                          </div>
+                          <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div className={`h-full ${tone.bar}`} style={{ width: `${health.pctRemaining}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
         {/* Season card */}
         <section className="mb-6 rounded-2xl bg-card-gradient p-5 shadow-soft">
           <div className="mb-3 flex items-center justify-between">
@@ -172,6 +238,7 @@ function HomeDashboard() {
         {/* Quick links */}
         <section className="grid grid-cols-2 gap-3">
           {[
+            { to: "/equipment", i: Activity, t: "My equipment", d: "Track age & service" },
             { to: "/systems", i: BookOpen, t: "Systems guide", d: "Shutoffs & lifespans" },
             { to: "/partners", i: Users, t: "Your pros", d: "Vetted partners" },
           ].map((q) => (
