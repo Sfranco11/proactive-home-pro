@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createClient } from '@supabase/supabase-js';
 import { type StripeEnv, verifyWebhook } from '@/lib/stripe.server';
+import { tierFromPriceId, BOUNTY_CENTS, loyaltyCreditForYear } from '@/lib/membership';
 
 let _supabase: any = null;
 function getSupabase(): any {
@@ -19,6 +20,42 @@ function resolvePriceId(item: any): string {
     || item?.price?.id;
 }
 
+// Insert a brokerage bounty if this homeowner has a realtor and no bounty exists yet for this sub.
+async function maybeCreateBounty(
+  sb: any,
+  userId: string,
+  tier: 'premium' | 'complete',
+  stripeSubscriptionId: string,
+  env: StripeEnv,
+) {
+  // Find the homeowner's primary home + assigned realtor
+  const { data: home } = await sb
+    .from('homes')
+    .select('realtor_id')
+    .eq('owner_id', userId)
+    .not('realtor_id', 'is', null)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!home?.realtor_id) return;
+
+  const amount = BOUNTY_CENTS[tier];
+  await sb.from('realtor_bounties').upsert(
+    {
+      realtor_id: home.realtor_id,
+      homeowner_id: userId,
+      tier,
+      amount_cents: amount,
+      currency: 'USD',
+      status: 'pending',
+      stripe_subscription_id: stripeSubscriptionId,
+      environment: env,
+    },
+    { onConflict: 'stripe_subscription_id,environment', ignoreDuplicates: true },
+  );
+}
+
 async function handleSubscriptionCreated(subscription: any, env: StripeEnv) {
   const userId = subscription.metadata?.userId;
   if (!userId) {
@@ -31,7 +68,8 @@ async function handleSubscriptionCreated(subscription: any, env: StripeEnv) {
   const periodStart = item?.current_period_start ?? subscription.current_period_start;
   const periodEnd = item?.current_period_end ?? subscription.current_period_end;
 
-  await getSupabase().from('subscriptions').upsert(
+  const sb = getSupabase();
+  await sb.from('subscriptions').upsert(
     {
       user_id: userId,
       stripe_subscription_id: subscription.id,
@@ -46,6 +84,12 @@ async function handleSubscriptionCreated(subscription: any, env: StripeEnv) {
     },
     { onConflict: 'stripe_subscription_id' }
   );
+
+  // Brokerage bounty (one-time, on signup)
+  const tier = tierFromPriceId(priceId);
+  if (tier !== 'none') {
+    await maybeCreateBounty(sb, userId, tier, subscription.id, env);
+  }
 }
 
 async function handleSubscriptionUpdated(subscription: any, env: StripeEnv) {
@@ -81,13 +125,57 @@ async function handleSubscriptionDeleted(subscription: any, env: StripeEnv) {
     .eq('environment', env);
 }
 
+// Renewal payment → grant loyalty credit for the year the customer is entering.
+async function handleInvoicePaymentSucceeded(invoice: any, env: StripeEnv) {
+  if (invoice.billing_reason !== 'subscription_cycle') return; // only renewals, not first payment
+  const stripeSubscriptionId: string | undefined = invoice.subscription;
+  if (!stripeSubscriptionId) return;
+
+  const sb = getSupabase();
+  const { data: sub } = await sb
+    .from('subscriptions')
+    .select('user_id')
+    .eq('stripe_subscription_id', stripeSubscriptionId)
+    .eq('environment', env)
+    .maybeSingle();
+  if (!sub?.user_id) return;
+
+  // Count past credits to determine which member year this renewal represents.
+  // First renewal → year 2, second → year 3, etc.
+  const { count } = await sb
+    .from('loyalty_credits')
+    .select('id', { count: 'exact', head: true })
+    .eq('stripe_subscription_id', stripeSubscriptionId)
+    .eq('environment', env);
+  const memberYear = (count ?? 0) + 2;
+  const amount = loyaltyCreditForYear(memberYear);
+  if (amount <= 0) return;
+
+  // Expire one year from grant.
+  const expires = new Date();
+  expires.setFullYear(expires.getFullYear() + 1);
+
+  await sb.from('loyalty_credits').upsert(
+    {
+      owner_id: sub.user_id,
+      amount_cents: amount,
+      currency: (invoice.currency ?? 'usd').toUpperCase(),
+      member_year: memberYear,
+      status: 'active',
+      expires_at: expires.toISOString(),
+      stripe_subscription_id: stripeSubscriptionId,
+      environment: env,
+    },
+    { onConflict: 'stripe_subscription_id,member_year,environment', ignoreDuplicates: true },
+  );
+}
+
 async function handleCheckoutSessionCompleted(session: any, env: StripeEnv) {
   const bookingId = session.metadata?.bookingId;
   const kind = session.metadata?.kind;
-  if (kind !== 'booking' || !bookingId) return; // only handle booking checkouts here
+  if (kind !== 'booking' || !bookingId) return;
 
   const sb = getSupabase();
-
   const { data: booking } = await sb
     .from('bookings')
     .select('id, owner_id, realtor_id')
@@ -148,6 +236,9 @@ async function handleWebhook(req: Request, env: StripeEnv) {
       break;
     case 'customer.subscription.deleted':
       await handleSubscriptionDeleted(event.data.object, env);
+      break;
+    case 'invoice.payment_succeeded':
+      await handleInvoicePaymentSucceeded(event.data.object, env);
       break;
     case 'checkout.session.completed':
       await handleCheckoutSessionCompleted(event.data.object, env);
