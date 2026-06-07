@@ -297,6 +297,9 @@ function BookingDetail() {
           </Button>
         </section>
 
+        {/* Payment */}
+        {!isTerminal && payableAmount > 0 && <PayBookingSection bookingId={id} amount={payableAmount} />}
+
         {/* Invoices / receipts */}
         <Invoices bookingId={id} />
 
