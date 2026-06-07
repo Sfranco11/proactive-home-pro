@@ -384,6 +384,7 @@ export type Database = {
           realtor_id: string
           response_time: string | null
           service_area: string | null
+          user_id: string | null
         }
         Insert: {
           category: string
@@ -398,6 +399,7 @@ export type Database = {
           realtor_id: string
           response_time?: string | null
           service_area?: string | null
+          user_id?: string | null
         }
         Update: {
           category?: string
@@ -412,6 +414,7 @@ export type Database = {
           realtor_id?: string
           response_time?: string | null
           service_area?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -758,10 +761,19 @@ export type Database = {
           logo_url: string
         }[]
       }
+      get_realtor_brand_by_id: {
+        Args: { _user_id: string }
+        Returns: {
+          brand_color: string
+          company_name: string
+          logo_url: string
+        }[]
+      }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      resolve_realtor_by_code: { Args: { _code: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
