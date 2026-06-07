@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, AlertTriangle, Sparkles, LayoutDashboard, BookCheck, DollarSign, Repeat } from "lucide-react";
+import { Home, AlertTriangle, Sparkles, LayoutDashboard, BookCheck, DollarSign, Repeat, Gift } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 const homeownerItems = [
@@ -13,6 +13,7 @@ const homeownerItems = [
 const realtorItems = [
   { to: "/realtor", label: "Dashboard", icon: LayoutDashboard },
   { to: "/realtor/revenue", label: "Revenue", icon: DollarSign },
+  { to: "/realtor/bounties", label: "Bounties", icon: Gift },
 ];
 
 export function BottomNav() {

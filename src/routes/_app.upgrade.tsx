@@ -1,43 +1,44 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Crown, Check, Loader2, Sparkles, ShieldCheck, Archive } from "lucide-react";
+import { Crown, Check, Loader2, ShieldCheck, Archive, Snowflake, Sun, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
-import { usePremium } from "@/hooks/usePremium";
+import { useMembership } from "@/hooks/useMembership";
 import { isPaymentsConfigured, getStripeEnvironment } from "@/lib/stripe";
 import { createPortalSession } from "@/lib/payments.functions";
+import { TIER_LABELS } from "@/lib/membership";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/upgrade")({
   component: UpgradePage,
 });
 
-const CORE_BENEFITS = [
-  { i: Sparkles, t: "Vetted pros marketplace", d: "Licensed, insured, ranked by quality" },
-  { i: Sparkles, t: "Booking management", d: "Schedule, reschedule, message your pro" },
-  { i: Sparkles, t: "Live service tracking", d: "Status, ETA, photos, invoices" },
-  { i: Sparkles, t: "Maintenance reminders", d: "Seasonal & on-demand alerts" },
-  { i: Sparkles, t: "AutoPilot recurring scheduling", d: "Drafts your next booking on schedule" },
-  { i: Sparkles, t: "Digital homeowner records", d: "Everything done, in one place" },
+type Plan = "premium_annual" | "complete_annual";
+
+const PLATFORM_BENEFITS = [
+  "Vetted, licensed & insured pros",
+  "Member pricing on every booking",
+  "Emergency triage & priority response",
+  "Digital home profile & service history",
+  "AutoPilot recurring scheduling",
+  "Equipment tracking with health alerts",
 ];
 
-const ANNUAL_EXTRAS = [
-  { i: Crown, t: "Two months free", d: "Annual pricing saves 34%" },
-  { i: Crown, t: "Priority support", d: "Front-of-line concierge" },
-  { i: Crown, t: "Preferred vendor discounts", d: "Exclusive partner offers" },
-  { i: Crown, t: "Annual maintenance summary", d: "PDF report for your records" },
+const COMPLETE_EXTRAS = [
+  { i: Snowflake, t: "Unlimited snow removal", d: "All winter, on schedule" },
+  { i: Sun, t: "Lawn care all season", d: "Mow, edge, trim — fortnightly" },
+  { i: Sparkles, t: "Same crew, every visit", d: "Your dedicated team" },
+  { i: Crown, t: "Concierge support", d: "Direct line, no queues" },
 ];
 
-const RETAINED = ["Home records", "Service history", "Receipts & invoices", "Property information"];
-const LOST = ["Active AutoPilot schedules", "Premium benefits", "Preferred pricing", "Marketplace booking privileges"];
-
-type Plan = "premium_monthly" | "premium_yearly";
+const RETAINED = ["Home records", "Service history", "Receipts & invoices", "Equipment data"];
+const LOST = ["AutoPilot schedules", "Member pricing", "Concierge", "Yard-care service (Complete only)"];
 
 function UpgradePage() {
   const navigate = useNavigate();
-  const { isPremium, loading, userId, subscription } = usePremium();
+  const { tier, isActive, loading, userId, currentPeriodEnd, cancelAtPeriodEnd } = useMembership();
   const [selected, setSelected] = useState<Plan | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
 
@@ -60,7 +61,7 @@ function UpgradePage() {
     return (
       <>
         <PaymentTestModeBanner />
-        <AppHeader title="Checkout" subtitle="Secure payment" />
+        <AppHeader title="Checkout" subtitle="Secure annual membership" />
         <main className="container-app py-4">
           <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="mb-3">← Back</Button>
           <StripeEmbeddedCheckout
@@ -81,56 +82,69 @@ function UpgradePage() {
         <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-6 shadow-soft">
           <div className="flex items-center gap-2 text-primary">
             <Crown className="h-5 w-5" />
-            <span className="text-xs font-semibold uppercase tracking-wider">Member</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">HomeOwner Pro</span>
           </div>
-          <h2 className="mt-2 font-display text-2xl font-bold">Manage your home in one place.</h2>
+          <h2 className="mt-2 font-display text-2xl font-bold">Two ways to run your home.</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Vetted pros, effortless booking, automated recurring maintenance — and a full record of every job.
+            Pay annually. Cancel anytime. Year 2+ earn loyalty credits toward any booking.
           </p>
         </div>
 
-        {isPremium ? (
+        {isActive ? (
           <div className="space-y-3 rounded-2xl border border-primary/40 bg-primary/5 p-5 text-center">
             <Crown className="mx-auto h-6 w-6 text-primary" />
-            <p className="font-display text-lg font-semibold">You're a member.</p>
-            {subscription?.current_period_end && (
+            <p className="font-display text-lg font-semibold">You're on {TIER_LABELS[tier]}.</p>
+            {currentPeriodEnd && (
               <p className="text-xs text-muted-foreground">
-                {subscription.cancel_at_period_end ? "Access ends" : "Renews"}{" "}
-                {new Date(subscription.current_period_end).toLocaleDateString()}
+                {cancelAtPeriodEnd ? "Access ends" : "Renews"}{" "}
+                {new Date(currentPeriodEnd).toLocaleDateString()}
               </p>
             )}
             <Button onClick={openPortal} disabled={portalLoading} className="w-full">
               {portalLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Manage subscription
             </Button>
-            <Button variant="ghost" onClick={() => navigate({ to: "/autopilot" })} className="w-full">
-              Set up AutoPilot
+            <Button variant="ghost" onClick={() => navigate({ to: "/renewal" })} className="w-full">
+              See my year-in-review
             </Button>
+            {tier === "premium" && (
+              <Button variant="outline" onClick={() => setSelected("complete_annual")} className="w-full">
+                Upgrade to Complete
+              </Button>
+            )}
           </div>
         ) : (
           <>
             <div className="grid gap-3 sm:grid-cols-2">
               <PlanCard
-                plan="Monthly"
-                price="$9.99"
-                cadence="/ month"
-                tagline="Everything you need to run your home"
-                features={CORE_BENEFITS.slice(0, 4).map((b) => b.t)}
-                onClick={() => setSelected("premium_monthly")}
+                tag="Premium"
+                price="$249"
+                cadence="/ year"
+                tagline="Platform access + member pricing"
+                features={PLATFORM_BENEFITS}
+                ctaLabel="Choose Premium"
+                onClick={() => setSelected("premium_annual")}
                 disabled={!isPaymentsConfigured() || loading || !userId}
               />
               <PlanCard
-                plan="Annual"
-                price="$79"
+                tag="Complete"
+                price="$1,548"
                 cadence="/ year"
-                badge="Save 34%"
-                tagline="Best value · priority support"
-                features={["Everything in Monthly", ...ANNUAL_EXTRAS.map((b) => b.t)]}
+                badge="Everything done for you"
+                tagline="Premium + year-round yard care"
+                features={[
+                  "Everything in Premium",
+                  ...COMPLETE_EXTRAS.map((e) => e.t),
+                ]}
                 highlight
-                onClick={() => setSelected("premium_yearly")}
+                ctaLabel="Choose Complete"
+                onClick={() => setSelected("complete_annual")}
                 disabled={!isPaymentsConfigured() || loading || !userId}
               />
             </div>
+            <p className="text-center text-[11px] text-muted-foreground">
+              Equivalent to $21/mo (Premium) or $129/mo (Complete). Annual billing only.
+            </p>
             {!userId && !loading && (
               <p className="text-center text-xs text-muted-foreground">
                 <Link to="/auth" className="text-primary hover:underline">Sign in</Link> to subscribe.
@@ -140,15 +154,12 @@ function UpgradePage() {
         )}
 
         <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <h3 className="font-display text-base font-semibold">What's included</h3>
+          <h3 className="font-display text-base font-semibold">What's in every tier</h3>
           <ul className="mt-3 space-y-2">
-            {CORE_BENEFITS.map((b) => (
-              <li key={b.t} className="flex items-start gap-3 text-sm">
+            {PLATFORM_BENEFITS.map((b) => (
+              <li key={b} className="flex items-start gap-3 text-sm">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                <div>
-                  <div className="font-medium">{b.t}</div>
-                  <div className="text-xs text-muted-foreground">{b.d}</div>
-                </div>
+                <span>{b}</span>
               </li>
             ))}
           </ul>
@@ -157,10 +168,10 @@ function UpgradePage() {
         <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
           <div className="flex items-center gap-2 text-primary">
             <Crown className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wider">Annual extras</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">Complete extras</span>
           </div>
           <ul className="mt-3 space-y-2">
-            {ANNUAL_EXTRAS.map((b) => (
+            {COMPLETE_EXTRAS.map((b) => (
               <li key={b.t} className="flex items-start gap-3 text-sm">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <div>
@@ -174,12 +185,34 @@ function UpgradePage() {
 
         <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h3 className="font-display text-base font-semibold">Loyalty credits</h3>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Every renewal earns service credits you can apply to any booking.
+          </p>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl bg-muted/40 p-3">
+              <div className="text-xs text-muted-foreground">Year 2</div>
+              <div className="font-display text-lg font-bold">$50</div>
+            </div>
+            <div className="rounded-xl bg-muted/40 p-3">
+              <div className="text-xs text-muted-foreground">Year 3</div>
+              <div className="font-display text-lg font-bold">$100</div>
+            </div>
+            <div className="rounded-xl bg-muted/40 p-3">
+              <div className="text-xs text-muted-foreground">Year 4+</div>
+              <div className="font-display text-lg font-bold">$150</div>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <div className="flex items-center gap-2">
             <Archive className="h-4 w-4 text-muted-foreground" />
             <h3 className="font-display text-base font-semibold">If you cancel</h3>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            We believe your data is yours. Forever.
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Your data is yours. Forever.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div>
               <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
@@ -207,9 +240,9 @@ function UpgradePage() {
 }
 
 function PlanCard({
-  plan, price, cadence, badge, tagline, features, highlight, onClick, disabled,
+  tag, price, cadence, badge, tagline, features, highlight, onClick, disabled, ctaLabel,
 }: {
-  plan: string;
+  tag: string;
   price: string;
   cadence: string;
   badge?: string;
@@ -218,18 +251,16 @@ function PlanCard({
   highlight?: boolean;
   onClick?: () => void;
   disabled?: boolean;
+  ctaLabel: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`text-left rounded-2xl border p-4 shadow-soft transition hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed ${
+    <div
+      className={`flex flex-col rounded-2xl border p-4 shadow-soft transition ${
         highlight ? "border-primary bg-primary/5" : "border-border bg-card"
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="font-display text-sm font-semibold">{plan}</span>
+        <span className="font-display text-sm font-semibold">{tag}</span>
         {badge && (
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${highlight ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
             {badge}
@@ -241,7 +272,7 @@ function PlanCard({
         <span className="text-xs text-muted-foreground">{cadence}</span>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{tagline}</p>
-      <ul className="mt-3 space-y-1">
+      <ul className="mt-3 space-y-1 flex-1">
         {features.map((f) => (
           <li key={f} className="flex items-start gap-1.5 text-[12px]">
             <Check className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
@@ -249,6 +280,14 @@ function PlanCard({
           </li>
         ))}
       </ul>
-    </button>
+      <Button
+        onClick={onClick}
+        disabled={disabled}
+        variant={highlight ? "default" : "outline"}
+        className="mt-4 w-full"
+      >
+        {ctaLabel}
+      </Button>
+    </div>
   );
 }
