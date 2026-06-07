@@ -154,7 +154,8 @@ function BookingDetail() {
 
   const currentIdx = TIMELINE.findIndex((s) => s.key === booking.status);
   const isTerminal = booking.status === "completed" || booking.status === "cancelled";
-  const proLink = `${typeof window !== "undefined" ? window.location.origin : ""}/book/${booking.pro_token}`;
+  const proLink = `${typeof window !== "undefined" ? window.location.origin : ""}/book/${booking.public_token ?? ""}`;
+  const payableAmount = Number(booking.final_cost ?? booking.estimated_cost ?? 0);
 
   return (
     <>
