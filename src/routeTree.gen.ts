@@ -18,6 +18,7 @@ import { Route as BookTokenRouteImport } from './routes/book.$token'
 import { Route as AppUpgradeRouteImport } from './routes/_app.upgrade'
 import { Route as AppTriageRouteImport } from './routes/_app.triage'
 import { Route as AppSystemsRouteImport } from './routes/_app.systems'
+import { Route as AppRenewalRouteImport } from './routes/_app.renewal'
 import { Route as AppRealtorRouteImport } from './routes/_app.realtor'
 import { Route as AppProsRouteImport } from './routes/_app.pros'
 import { Route as AppPartnersRouteImport } from './routes/_app.partners'
@@ -28,6 +29,7 @@ import { Route as AppCalendarRouteImport } from './routes/_app.calendar'
 import { Route as AppBookingsRouteImport } from './routes/_app.bookings'
 import { Route as AppAutopilotRouteImport } from './routes/_app.autopilot'
 import { Route as AppRealtorRevenueRouteImport } from './routes/_app.realtor.revenue'
+import { Route as AppRealtorBountiesRouteImport } from './routes/_app.realtor.bounties'
 import { Route as AppProsIdRouteImport } from './routes/_app.pros.$id'
 import { Route as AppBookingsIdRouteImport } from './routes/_app.bookings.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -76,6 +78,11 @@ const AppTriageRoute = AppTriageRouteImport.update({
 const AppSystemsRoute = AppSystemsRouteImport.update({
   id: '/systems',
   path: '/systems',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRenewalRoute = AppRenewalRouteImport.update({
+  id: '/renewal',
+  path: '/renewal',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRealtorRoute = AppRealtorRouteImport.update({
@@ -128,6 +135,11 @@ const AppRealtorRevenueRoute = AppRealtorRevenueRouteImport.update({
   path: '/revenue',
   getParentRoute: () => AppRealtorRoute,
 } as any)
+const AppRealtorBountiesRoute = AppRealtorBountiesRouteImport.update({
+  id: '/bounties',
+  path: '/bounties',
+  getParentRoute: () => AppRealtorRoute,
+} as any)
 const AppProsIdRoute = AppProsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -169,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/partners': typeof AppPartnersRoute
   '/pros': typeof AppProsRouteWithChildren
   '/realtor': typeof AppRealtorRouteWithChildren
+  '/renewal': typeof AppRenewalRoute
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
@@ -176,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/r/$code': typeof RCodeRoute
   '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
+  '/realtor/bounties': typeof AppRealtorBountiesRoute
   '/realtor/revenue': typeof AppRealtorRevenueRoute
   '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/hooks/autopilot-draft': typeof ApiPublicHooksAutopilotDraftRoute
@@ -194,6 +208,7 @@ export interface FileRoutesByTo {
   '/partners': typeof AppPartnersRoute
   '/pros': typeof AppProsRouteWithChildren
   '/realtor': typeof AppRealtorRouteWithChildren
+  '/renewal': typeof AppRenewalRoute
   '/systems': typeof AppSystemsRoute
   '/triage': typeof AppTriageRoute
   '/upgrade': typeof AppUpgradeRoute
@@ -201,6 +216,7 @@ export interface FileRoutesByTo {
   '/r/$code': typeof RCodeRoute
   '/bookings/$id': typeof AppBookingsIdRoute
   '/pros/$id': typeof AppProsIdRoute
+  '/realtor/bounties': typeof AppRealtorBountiesRoute
   '/realtor/revenue': typeof AppRealtorRevenueRoute
   '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/hooks/autopilot-draft': typeof ApiPublicHooksAutopilotDraftRoute
@@ -221,6 +237,7 @@ export interface FileRoutesById {
   '/_app/partners': typeof AppPartnersRoute
   '/_app/pros': typeof AppProsRouteWithChildren
   '/_app/realtor': typeof AppRealtorRouteWithChildren
+  '/_app/renewal': typeof AppRenewalRoute
   '/_app/systems': typeof AppSystemsRoute
   '/_app/triage': typeof AppTriageRoute
   '/_app/upgrade': typeof AppUpgradeRoute
@@ -228,6 +245,7 @@ export interface FileRoutesById {
   '/r/$code': typeof RCodeRoute
   '/_app/bookings/$id': typeof AppBookingsIdRoute
   '/_app/pros/$id': typeof AppProsIdRoute
+  '/_app/realtor/bounties': typeof AppRealtorBountiesRoute
   '/_app/realtor/revenue': typeof AppRealtorRevenueRoute
   '/api/public/bookings/$token': typeof ApiPublicBookingsTokenRoute
   '/api/public/hooks/autopilot-draft': typeof ApiPublicHooksAutopilotDraftRoute
@@ -248,6 +266,7 @@ export interface FileRouteTypes {
     | '/partners'
     | '/pros'
     | '/realtor'
+    | '/renewal'
     | '/systems'
     | '/triage'
     | '/upgrade'
@@ -255,6 +274,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/bookings/$id'
     | '/pros/$id'
+    | '/realtor/bounties'
     | '/realtor/revenue'
     | '/api/public/bookings/$token'
     | '/api/public/hooks/autopilot-draft'
@@ -273,6 +293,7 @@ export interface FileRouteTypes {
     | '/partners'
     | '/pros'
     | '/realtor'
+    | '/renewal'
     | '/systems'
     | '/triage'
     | '/upgrade'
@@ -280,6 +301,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/bookings/$id'
     | '/pros/$id'
+    | '/realtor/bounties'
     | '/realtor/revenue'
     | '/api/public/bookings/$token'
     | '/api/public/hooks/autopilot-draft'
@@ -299,6 +321,7 @@ export interface FileRouteTypes {
     | '/_app/partners'
     | '/_app/pros'
     | '/_app/realtor'
+    | '/_app/renewal'
     | '/_app/systems'
     | '/_app/triage'
     | '/_app/upgrade'
@@ -306,6 +329,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/_app/bookings/$id'
     | '/_app/pros/$id'
+    | '/_app/realtor/bounties'
     | '/_app/realtor/revenue'
     | '/api/public/bookings/$token'
     | '/api/public/hooks/autopilot-draft'
@@ -389,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSystemsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/renewal': {
+      id: '/_app/renewal'
+      path: '/renewal'
+      fullPath: '/renewal'
+      preLoaderRoute: typeof AppRenewalRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/realtor': {
       id: '/_app/realtor'
       path: '/realtor'
@@ -459,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRealtorRevenueRouteImport
       parentRoute: typeof AppRealtorRoute
     }
+    '/_app/realtor/bounties': {
+      id: '/_app/realtor/bounties'
+      path: '/bounties'
+      fullPath: '/realtor/bounties'
+      preLoaderRoute: typeof AppRealtorBountiesRouteImport
+      parentRoute: typeof AppRealtorRoute
+    }
     '/_app/pros/$id': {
       id: '/_app/pros/$id'
       path: '/$id'
@@ -521,10 +559,12 @@ const AppProsRouteWithChildren =
   AppProsRoute._addFileChildren(AppProsRouteChildren)
 
 interface AppRealtorRouteChildren {
+  AppRealtorBountiesRoute: typeof AppRealtorBountiesRoute
   AppRealtorRevenueRoute: typeof AppRealtorRevenueRoute
 }
 
 const AppRealtorRouteChildren: AppRealtorRouteChildren = {
+  AppRealtorBountiesRoute: AppRealtorBountiesRoute,
   AppRealtorRevenueRoute: AppRealtorRevenueRoute,
 }
 
@@ -542,6 +582,7 @@ interface AppRouteChildren {
   AppPartnersRoute: typeof AppPartnersRoute
   AppProsRoute: typeof AppProsRouteWithChildren
   AppRealtorRoute: typeof AppRealtorRouteWithChildren
+  AppRenewalRoute: typeof AppRenewalRoute
   AppSystemsRoute: typeof AppSystemsRoute
   AppTriageRoute: typeof AppTriageRoute
   AppUpgradeRoute: typeof AppUpgradeRoute
@@ -557,6 +598,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPartnersRoute: AppPartnersRoute,
   AppProsRoute: AppProsRouteWithChildren,
   AppRealtorRoute: AppRealtorRouteWithChildren,
+  AppRenewalRoute: AppRenewalRoute,
   AppSystemsRoute: AppSystemsRoute,
   AppTriageRoute: AppTriageRoute,
   AppUpgradeRoute: AppUpgradeRoute,
