@@ -1,105 +1,83 @@
-# Next Phase Plan: Marketplace, Paywall, Bookings & Automation
+# Payments & Realtor Payouts
 
-This is a large scope. I'll break it into 4 shippable phases so you can review and use each before the next. Each phase ends with something working in your live app.
-
----
-
-## Phase 1 — Pros Directory (Vaughan, ON)
-
-**Goal:** A browsable, searchable directory of high-rated local pros across all 12 categories, with a "Request booking" CTA wired to the next phase.
-
-- New `service_providers` table (separate from the existing realtor-managed `partners` — these are platform-wide, curated).
-  - Fields: name, category, rating, review_count, phone, email, website, service_area, description, photo_urls[], google_place_id, is_premium_only, sort_rank.
-- Seed ~5–10 providers per category for Vaughan (sourced via Google Places — see note below).
-- New route `/_app/pros` with category filter chips, search, and provider cards.
-- Provider detail page `/_app/pros/$id` with photos, full description, reviews count, and **Book Service** CTA.
-- Free tier sees only 2 providers per category + locked cards; premium sees all (paywall enforced in Phase 2).
-
-**Data sourcing note:** I'll seed realistic placeholder data for Vaughan now. To pull *live* Google ratings/reviews we need the Google Maps Platform connector (Places API New). I'll wire that as an admin-only refresh job once you confirm.
+Two systems, built in this order so homeowners can pay now and realtors can cash out as soon as their Connect onboarding completes.
 
 ---
 
-## Phase 2 — Premium Paywall (Stripe)
+## Phase 1 — Homeowner in-app checkout (built first)
 
-**Goal:** Free vs Premium tiers with monthly/annual plans and a 7-day free trial.
+Goal: every booking gets a **Pay** button. Cards + Apple Pay + Google Pay always available; **Klarna / Affirm / Afterpay shown when `final_cost ≥ $1,000`**.
 
-- Enable Lovable's built-in Stripe payments (no API key needed from you).
-- Products: Premium Monthly, Premium Annual, both with 7-day trial.
-- New `subscriptions` table mirroring Stripe state (status, plan, current_period_end, trial_end).
-- Stripe webhook (`/api/public/webhooks/stripe`) updates subscription state.
-- `usePremium()` hook + `<PaywallGate>` component to lock:
-  - Full pros directory
-  - Priority booking
-  - Service tracking
-  - Concierge & discounts sections
-- Pricing page `/_app/upgrade` with plan cards + checkout redirect.
-- Billing portal link for managing/cancelling.
+### Backend
+- New server fn `createBookingCheckoutSession({ bookingId, environment })` in `src/lib/payments.functions.ts`
+  - Uses the existing `createStripeClient` shared utility
+  - Loads booking, asserts `auth.uid() = owner_id`, requires `final_cost` set by the pro
+  - Builds an embedded checkout session with `price_data` (dynamic amount = `final_cost`)
+  - `payment_method_types`: cards always; if `final_cost ≥ 1000` add `klarna`, `affirm`, `afterpay_clearpay`
+  - Apple Pay / Google Pay come free with cards on embedded checkout
+  - Stamps `metadata.bookingId` + `metadata.userId`
+  - Returns `clientSecret`
+- Extend the existing `/api/public/payments/webhook` handler to also handle `checkout.session.completed` for bookings → write `invoices` row (`status='paid'`, `amount`, `paid_at`) and flip the booking to `status='completed'`.
 
-**Note:** Stripe setup is a separate tool call after you approve — it prompts you for business info.
+### Frontend
+- `<PayBookingButton booking={…} />` opens `StripeEmbeddedCheckout` in a dialog
+- Shown in `_app.bookings.$id.tsx` once the pro has set a `final_cost` and `status !== 'completed'`
+- After return, the booking detail page reads invoice + payment status from `invoices`
+- A "💳 Pay over time available" hint renders when `final_cost ≥ 1000`
 
----
-
-## Phase 3 — Bookings, Tracking & Realtor Revenue
-
-**Goal:** End-to-end booking lifecycle with Uber-style tracking and realtor commissions.
-
-### Data model
-- `bookings`: id, referral_code (unique), homeowner_id, provider_id, realtor_id, category, service_type (one_time/recurring/seasonal), scheduled_at, status, price, commission_rate, commission_amount, commission_status, notes.
-- `booking_events`: timeline entries (status changes, ETA updates, photos).
-- `booking_messages`: in-app chat between homeowner & pro.
-- Statuses: requested → contacted → scheduled → confirmed → on_the_way → arrived → in_progress → completed (or cancelled).
-
-### Homeowner experience
-- "My Bookings" list + detail page with vertical timeline (6 steps).
-- Live status updates (Supabase Realtime).
-- Before/after photo upload (Lovable Cloud storage bucket).
-- Google Maps embed showing pro's ETA when `on_the_way` (Maps connector).
-- In-app messaging thread.
-
-### Realtor admin dashboard `/_app/realtor/revenue`
-- KPIs: total referrals, completed jobs, revenue generated, pending vs paid commissions, conversion rate.
-- Per-provider custom commission rate editor.
-- Monthly commission report export (CSV).
-- Payout tracking table.
-
-### Pro-side updates
-- Lightweight update form (status + ETA + photos) so pros can advance the timeline. (No separate pro app yet — magic-link page per booking.)
+### Data
+- Backfill: `invoices` table already exists. No schema changes needed.
 
 ---
 
-## Phase 4 — Automation & AI Assistant
+## Phase 2 — Realtor Connect onboarding + payout split
 
-**Goal:** "Set it and forget it" recurring/seasonal service management.
+Goal: each realtor links a Stripe Express account once; every paid booking automatically routes their commission to their bank.
 
-- `service_schedules` table: booking_id, cadence (weekly/monthly/quarterly/seasonal), next_due_at, mode (reminder / auto_schedule / auto_book), preferred_provider_id.
-- pg_cron job hitting `/api/public/hooks/schedule-tick` daily to:
-  - Send reminders for due services
-  - Auto-create booking requests for `auto_schedule`
-  - Auto-confirm with provider for `auto_book`
-- Smart recommendations engine: when a booking completes, infer follow-ups (e.g. lawn care May → recurring summer; furnace Oct → next Oct).
-- Home Maintenance Dashboard `/_app/maintenance` showing upcoming, overdue, seasonal, history, est. annual cost.
-- AI Home Assistant chat panel using Lovable AI Gateway (google/gemini-2.5-flash):
-  - Reads home profile + booking history + seasonal calendar
-  - Answers maintenance questions and proposes bookings
-  - Free tier: 5 messages/mo; Premium: unlimited.
+### Prerequisite (requires user action)
+- **Switch from built-in payments to BYOK Stripe** so we can use Connect (`enable_stripe` BYOK). User provides a Stripe secret key from their own Stripe account; that account becomes the platform.
+- The webhook URL stays the same; we just swap the key source.
+
+### Database
+- New table `realtor_payout_accounts`: `realtor_id (uuid, unique)`, `stripe_account_id (text)`, `charges_enabled (bool)`, `payouts_enabled (bool)`, `details_submitted (bool)`, `requirements (jsonb)`, timestamps. RLS: realtor reads own row; service_role writes.
+
+### Backend
+- `createConnectOnboardingLink()` — creates an Express Connect account if missing, returns an account-link URL to embed/launch
+- `getPayoutAccountStatus()` — returns the row + a fresh Stripe `accounts.retrieve` so the UI reflects KYC progress live
+- Extend `createBookingCheckoutSession`:
+  - Look up realtor's connected account
+  - Look up the per-category commission rate from `realtor_commission_rates`
+  - Add `payment_intent_data: { application_fee_amount, transfer_data: { destination: realtor_stripe_account_id } }`
+  - If realtor isn't onboarded yet, fall back to a normal charge with no transfer; commission accrues as a "pending payout" we settle manually later
+- Extend the webhook to handle `account.updated` → upsert the payout-account flags
+- Extend the webhook's `checkout.session.completed` → write a `payouts` log row (amount, fee, status) for the realtor dashboard
+
+### Frontend
+- New `_app.realtor.payouts.tsx` route:
+  - "Connect your bank" CTA → onboarding link (opens new tab)
+  - Status card: charges enabled / payouts enabled / outstanding KYC requirements
+  - Payouts feed (date, booking, commission $, status)
+- `realtor.revenue` page gets a "Paid out" column wired to the real Stripe payout data
 
 ---
 
-## Technical notes
+## What I need from you before Phase 2
 
-- **Stack:** existing TanStack Start + Lovable Cloud (Supabase). All new server logic via `createServerFn`; webhooks/cron via `/api/public/*` routes.
-- **Connectors needed:** Stripe (built-in, Phase 2), Google Maps Platform (Phase 1 refresh + Phase 3 ETA), Resend (Phase 3/4 emails). I'll prompt you to connect each one at the start of its phase.
-- **Push notifications:** web push only initially (no native mobile app exists yet); SMS via Twilio is a later add-on if you want it.
-- **Future-proofing:** schema includes hooks for quotes, bidding, white-label, and smart-home integrations without rework.
+1. **Confirm you're OK switching to BYOK Stripe** so we can use Connect (Phase 1 works fine with either; only Phase 2 requires it).
+2. **Your Stripe secret key** (sandbox first). You'll create the Stripe account at stripe.com → grab the secret key → I'll add it via the secrets tool.
+3. Your country and the realtors' likely countries (Connect availability is per-country; US/CA/EU/UK/AU all good).
 
 ---
 
-## What I need from you
+## What this plan does NOT include (yet)
 
-1. **Approve this phased approach** (or tell me to merge/reorder).
-2. **Phase 1 data:** OK to seed realistic placeholder Vaughan providers now and wire live Google data later? Or wait and connect Google Maps first?
-3. **Phase 2 pricing:** what should Monthly / Annual cost? (e.g. $9.99/mo, $79/yr)
-4. **Phase 2 trial length:** 7 days OK?
-5. **Commission default %** for Phase 3 (e.g. 10% of completed job value)?
+- Refunds UI (Stripe portal handles it; we can add a button later)
+- Disputes/chargeback handling (Stripe dashboard for now)
+- Pro payouts — pros still get paid by realtors out-of-band per your earlier model; only realtor commissions flow through Connect
+- Tax handling on Connect transactions (Stripe Tax + Connect adds complexity; happy to layer on once basic payouts work)
 
-Once you answer these, I'll start Phase 1.
+---
+
+## Suggested next step
+
+Reply with **"Build Phase 1"** to start with in-app checkout (works immediately, no new credentials), or **"Build everything"** if you're ready to set up the Stripe account today and I'll wire Phase 2 alongside.
