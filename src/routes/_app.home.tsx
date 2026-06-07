@@ -56,13 +56,29 @@ function HomeDashboard() {
     <>
       <AppHeader title="HomeOwner Pro" subtitle={realtor ? `via ${realtor.company_name}` : "The operating system for your home"} />
       <main className="container-app py-6 pb-24">
-        {/* Greeting */}
-        <section className="mb-6">
-          <h1 className="font-display text-2xl font-semibold">Hi {profile?.full_name?.split(" ")[0] || "there"} 👋</h1>
-          <p className="text-sm text-muted-foreground">
-            It's <span className="font-medium text-foreground">{seasonMeta.label.toLowerCase()}</span> — your home is on track.
-          </p>
+        {/* Hero greeting */}
+        <section className="mb-6 overflow-hidden rounded-3xl bg-hero p-5 text-primary-foreground shadow-glow">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider backdrop-blur">
+                <CalendarCheck className="h-3 w-3" /> {seasonMeta.label}
+              </div>
+              <h1 className="mt-3 font-display text-2xl font-semibold leading-tight">
+                Hi {profile?.full_name?.split(" ")[0] || "there"} 👋
+              </h1>
+              <p className="mt-1 text-sm text-primary-foreground/80">
+                {tasks.filter((t) => completedKeys.has(t.key)).length}/{tasks.length} {seasonMeta.label.toLowerCase()} tasks done · {logsCount} logged in 90d
+              </p>
+            </div>
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/10 backdrop-blur">
+              <span className="font-display text-xl font-bold text-gold">
+                {Math.round((tasks.filter((t) => completedKeys.has(t.key)).length / Math.max(tasks.length, 1)) * 100)}%
+              </span>
+            </div>
+          </div>
         </section>
+
+
 
         {/* Primary actions */}
         <section className="mb-6 grid grid-cols-2 gap-3">
