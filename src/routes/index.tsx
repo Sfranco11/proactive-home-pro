@@ -22,17 +22,36 @@ function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-hero text-primary-foreground">
-        <div className="container-wide relative z-10 py-20 md:py-28">
-          <div className="max-w-2xl">
+      {/* Top nav (marketing) */}
+      <header className="absolute inset-x-0 top-0 z-20">
+        <div className="container-wide flex items-center justify-between py-5">
+          <Link to="/" className="flex items-center gap-2.5 text-primary-foreground">
             <img
               src={logoMark.url}
-              alt="HomeOwner Pro"
-              width={56}
-              height={56}
-              className="mb-6 h-14 w-14 rounded-2xl bg-white/10 p-2 backdrop-blur"
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 object-contain [filter:brightness(0)_invert(1)]"
             />
+            <span className="font-display text-lg font-semibold tracking-tight">
+              HomeOwner <span className="text-gold">Pro</span>
+            </span>
+          </Link>
+          <nav className="flex items-center gap-2">
+            <Button asChild variant="ghost" className="text-primary-foreground hover:bg-white/10 hover:text-primary-foreground">
+              <Link to="/auth">Sign in</Link>
+            </Button>
+            <Button asChild className="bg-gold text-gold-foreground hover:bg-gold/90">
+              <Link to="/auth">Get started</Link>
+            </Button>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-hero text-primary-foreground">
+        <div className="container-wide relative z-10 pt-28 pb-20 md:pt-36 md:pb-28">
+          <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-gold" />
               Gifted by your realtor
@@ -40,6 +59,7 @@ function Landing() {
             <h1 className="mt-5 font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
               Own your home with confidence.
             </h1>
+
 
             <p className="mt-5 max-w-xl text-base text-primary-foreground/85 md:text-lg">
               Seasonal maintenance reminders, a complete systems reference, and one tap to your
