@@ -313,22 +313,37 @@ function BookingDetail() {
   );
 }
 
-interface InvoiceRow { id: string; amount: number; tax: number; status: string; file_url: string | null; issued_at: string; }
+interface InvoiceRow { id: string; amount: number; status: string; pdf_url: string | null; paid_at: string | null; created_at: string; currency: string; }
+
+function PayBookingSection({ bookingId, amount }: { bookingId: string; amount: number }) {
+  const [paid, setPaid] = useState<boolean | null>(null);
+  useEffect(() => {
+    (supabase as any)
+      .from("invoices")
+      .select("id")
+      .eq("booking_id", bookingId)
+      .eq("status", "paid")
+      .limit(1)
+      .then(({ data }: any) => setPaid((data ?? []).length > 0));
+  }, [bookingId]);
+  if (paid) return null;
+  return <PayBookingButton bookingId={bookingId} amount={amount} />;
+}
 
 function Invoices({ bookingId }: { bookingId: string }) {
   const [rows, setRows] = useState<InvoiceRow[]>([]);
   useEffect(() => {
     (supabase as any)
       .from("invoices")
-      .select("id, amount, tax, status, file_url, issued_at")
+      .select("id, amount, status, pdf_url, paid_at, created_at, currency")
       .eq("booking_id", bookingId)
-      .order("issued_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .then(({ data }: any) => setRows(data ?? []));
   }, [bookingId]);
   if (rows.length === 0) {
     return (
       <section className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-        No invoices yet. Your pro will send one when the job is complete.
+        No invoices yet. Pay above to generate a receipt.
       </section>
     );
   }
@@ -339,11 +354,13 @@ function Invoices({ bookingId }: { bookingId: string }) {
         {rows.map((r) => (
           <li key={r.id} className="flex items-center justify-between rounded-xl bg-muted/30 p-3 text-sm">
             <div>
-              <div className="font-medium">${Number(r.amount).toFixed(2)}{r.tax ? ` + $${Number(r.tax).toFixed(2)} tax` : ""}</div>
-              <div className="text-[11px] text-muted-foreground">{new Date(r.issued_at).toLocaleDateString()} · {r.status}</div>
+              <div className="font-medium">${Number(r.amount).toFixed(2)} {r.currency}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {new Date(r.paid_at ?? r.created_at).toLocaleDateString()} · {r.status}
+              </div>
             </div>
-            {r.file_url && (
-              <a href={r.file_url} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline">
+            {r.pdf_url && (
+              <a href={r.pdf_url} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline">
                 View
               </a>
             )}
