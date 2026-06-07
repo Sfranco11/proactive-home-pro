@@ -2,6 +2,9 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { CheckCircle2, CalendarCheck, ShieldAlert, Users, BookOpen, ArrowRight } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/logo.png.asset.json";
+import logoMark from "@/assets/logo-mark.png.asset.json";
+
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -23,6 +26,13 @@ function Landing() {
       <section className="relative overflow-hidden bg-hero text-primary-foreground">
         <div className="container-wide relative z-10 py-20 md:py-28">
           <div className="max-w-2xl">
+            <img
+              src={logoMark.url}
+              alt="HomeOwner Pro"
+              width={56}
+              height={56}
+              className="mb-6 h-14 w-14 rounded-2xl bg-white/10 p-2 backdrop-blur"
+            />
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-gold" />
               Gifted by your realtor
@@ -30,6 +40,7 @@ function Landing() {
             <h1 className="mt-5 font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
               Own your home with confidence.
             </h1>
+
             <p className="mt-5 max-w-xl text-base text-primary-foreground/85 md:text-lg">
               Seasonal maintenance reminders, a complete systems reference, and one tap to your
               realtor's vetted pros when something breaks.
