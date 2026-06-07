@@ -32,7 +32,7 @@ function CalendarPage() {
             .from("partners_homeowner_safe" as any)
             .select("id, name, category, phone")
             .eq("realtor_id", h.realtor_id);
-          setPartners(ps ?? []);
+          setPartners((ps as any) ?? []);
         }
       }
       const { data: logs } = await supabase
